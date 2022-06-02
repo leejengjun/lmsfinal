@@ -21,3 +21,19 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+replay_pid*
+
+##### commit 제외파일 #####
+/Lmsfinal/src/main/webapp/WEB-INF/web.xml
+/Lmsfinal/src/main/webapp/WEB-INF/tiles/tiles-layout.xml
+/Lmsfinal/src/main/webapp/WEB-INF/spring/appServlet/servlet-context.xml
+/Lmsfinal/src/main/webapp/WEB-INF/spring/root-context.xml
+
+
+
+
+
+
+
+
+# End of https://www.toptal.com/developers/gitignore/api/eclipse,java
