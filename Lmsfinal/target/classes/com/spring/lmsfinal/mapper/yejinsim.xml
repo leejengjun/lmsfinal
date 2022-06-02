@@ -1,0 +1,813 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="yejinsim"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(101, '이정준', default)
+	</insert>
+
+
+	<!-- =============================================================== -->
+	
+	<!-- ==== 교원정보 불러오기 ==== -->
+	<select id="gyowoninfoSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.GyowonVO">	
+		SELECT B.deptname, A.gyowonid, A.gyopwd, A.gyoemail, A.majorid as gyomajorid, A.gyoname, A.gyonameeng
+		      , A.gyobirthday,  A.gyojumin, A.gyonation,  A.gyoaddress, A.gyopostcode, A.gyomobile, A.position, A.appointmentdt
+		      , A.workstatus, A.degree, A.career1, A.careerTime1, A.career2, A.careerTime2
+		FROM
+		(select gyowonid, gyopwd, gyoemail, gyomajorid as majorid, gyoname, gyonameeng, to_char(gyobirthday, 'yyyy-mm-dd') as gyobirthday, gyojumin
+		,gyonation,  gyoaddress, gyopostcode, gyomobile, position, to_char(appointmentdt, 'yyyy-mm-dd') as appointmentdt, workstatus
+		, degree, career1, careerTime1, career2, careerTime2
+		from tbl_gyowon) A
+		JOIN
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.majorid = B.majorid
+		where gyowonid = #{gyowonid}
+	</select>
+	
+	<!-- ==== 교원정보 수정하기 ==== -->
+    <update id="editgyowoninfo" parameterType="com.spring.lmsfinal.yejinsim.model.GyowonVO">
+        update tbl_gyowon set gyoemail = #{gyoemail} 
+                        , gyoname = #{gyoname} 
+                        , gyonameeng = #{gyonameeng}
+                        , gyobirthday = #{gyobirthday}
+                        , gyonation = #{gyonation}
+                        , gyoaddress = #{gyoaddress}
+                        , gyopostcode = #{gyopostcode}
+                        , gyomobile = #{gyomobile}
+                        , degree = #{degree}
+                        , career1 = #{career1}
+                        , careerTime1 = #{careerTime1}
+                        , career2 = #{career2}
+                        , careerTime2 = #{careerTime2}
+        where gyowonid = #{gyowonid} and gyopwd = #{gyopwd}
+    </update>
+	
+	
+	
+	<!--  ==== 페이징 처리를 안한 검색어 없는 내 강의 목록 보여주기 ====  -->
+    <select id="mylectureListNoSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+	   select distinct A.deptname, B.subjectid, B.classname, B.credit
+		, B.opensemester, B.applystate, B.applyperson, B.applydate, nvl(B.totalperson, NULL) as totalperson
+		, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+		, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+		            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		LEFT JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		LEFT JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		LEFT JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		LEFT JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		LEFT JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		LEFT JOIN
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+        LEFT JOIN
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+		where B.applystate = '등록완료' 
+		and B.gyowonid = #{userid}
+		and B.opensemester in (1,3,5,7)
+		order by B.applydate asc
+    </select>
+    
+  <select id="stumylectureListNoSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">   
+		select distinct A.deptname, B.subjectid, B.classname, B.credit
+				, B.opensemester, B.applystate, B.applyperson, B.applydate, nvl(B.totalperson, NULL) as totalperson
+				, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+				, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+				            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		JOIN
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+		JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) I
+		on B.subjectid = I.subjectid
+		JOIN
+		(select courseno, stdid, subjectid 
+		from tbl_course) J
+		ON B.subjectid = J.subjectid
+		where J.courseno > 500
+		and J.stdid = #{userid}
+		and B.opensemester in (1,3,5,7)
+		order by B.applydate asc
+    </select>
+    
+    <!--  ==== 페이징 처리를 안한 검색어 없는 내 강의 신청 목록 보여주기 ====  -->
+    <select id="applylectureListNoSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">	    
+		 select distinct A.deptname, B.subjectid, B.classname, B.credit
+		, B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+		, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+		, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+		            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		LEFT JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		LEFT JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		LEFT JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		LEFT JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		LEFT JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		LEFT JOIN
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+        LEFT JOIN
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+		where B.gyowonid = #{userid}
+		order by B.applydate asc
+    </select>
+    
+    <!-- === 신청한 강의 전체 갯수 알아오기 - 검색이 있을때 와 검색이 없을때로 나뉜다. === -->
+    <select id="getTotalCount" parameterType="HashMap" resultType="int">
+	    select count(*)
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select subjectid, majorid, gyowonid, classname, opensemester
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		where gyowonid = #{userid}
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%'
+		</if>
+		<if test='opensemester != ""'>
+        and opensemester in (${opensemester})
+        </if>
+        <if test='deptname != ""'>
+        and deptname in ('${deptname}')
+        </if>
+    </select> 
+    
+    <!-- 페이징 처리한 전체 신청강의 목록 보여주기 -->
+    <select id="applyListSearchWithPaging" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">	    
+	 	select rno, deptname, subjectid, classname, credit
+		, opensemester, applystate, applydate, totalperson
+		, dayid, lctrid, seq_lectureplan
+        from
+        (
+        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
+		, opensemester, applystate, applydate, totalperson
+		, dayid, lctrid, seq_lectureplan
+	 	from
+	 	(
+	 	select distinct A.deptname, B.subjectid, B.classname, B.credit
+		, B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+		, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+		, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+		            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject
+		) B
+		ON A.majorid = B.majorid
+		lEFT JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		lEFT JOIN 
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		lEFT JOIN 
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		lEFT JOIN 
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		lEFT JOIN 
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		lEFT JOIN 
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+        lEFT JOIN 
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+        where B.gyowonid = #{userid}
+        ) V
+        where 1=1 
+        <if test='searchType != "" and searchWord != ""'>
+        and lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%'
+        </if>
+        <if test='opensemester != ""'>
+        and opensemester in (${opensemester})
+        </if>
+        <if test='deptname != ""'>
+        and deptname in ('${deptname}')
+        </if>
+        ) 
+		where rno between #{startRno} and #{endRno}
+	</select>
+	
+	
+	<!-- === 검색어 입력시 자동글 완성하기  === -->
+    <select id="deptSearchShow" parameterType="HashMap" resultType="String">
+    	select deptname 
+    	from tbl_department
+    	where lower(deptname) like '%'|| lower(#{deptname}) ||'%' 
+		order by majorid asc
+    </select>
+    
+	
+	<!-- 신청강의 목록 페이지에서 검색어 입력시 자동글 완성하기 -->
+    <select id="lectureSearchShow" parameterType="HashMap" resultType="String">
+    	<choose>
+    		<when test="searchType eq 'classname'">
+    			select distinct ${searchType}
+    		</when>
+    		<otherwise>
+    			select ${searchType}
+    		</otherwise>
+    	</choose>
+    	from tbl_subject
+    	where gyowonid = #{userid} 
+    	and lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%' 
+		 <choose>
+    		<when test="searchType neq 'subjectid'">
+    			order by ${searchType} asc
+    		</when>
+    		<otherwise>
+    			order by applydate desc
+    		</otherwise>
+    	</choose>
+    </select>
+	
+    <!-- 강의코드에 따라 강의실 배정 정보 보여주기 (ajax) -->
+    <select id="timetableListSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.LectureroomVO">
+	 
+	    select distinct nvl(B.totalperson, '') AS totalperson
+	            , nvl(C.dayid, '') AS dayid
+	            , nvl(E.buildname,'') || ' ' ||  nvl(D.lctrid,'') AS lctrid
+		from
+		(select subjectid, totalperson
+		from tbl_subject) B
+		JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		where B.subjectid = #{subjectid}
+	    </select>
+	    
+	
+    <!-- 검색어에 따른 학과목록 출력하기 -->
+    <select id="deptListSearch" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+    	select majorid, deptname 
+		from tbl_department
+		<if test='searchType == "" or searchWord == ""'>
+		where majorid > 0
+		</if>
+		<if test='searchType != "" and searchWord != ""'>
+		where lower(${searchType}) like '%'||lower(#{searchWord})||'%'
+		</if>
+		order by majorid asc
+    </select>
+    
+    <!-- 강의신청한 순서에 따라 강의코드 주기 -->
+    <select id="subjectidShow" parameterType="String" resultType="int">
+	    select subjectid
+		from
+		(select row_number() over(order by subjectid desc) as rno, subjectid
+		from tbl_subject
+		where majorid= #{majorid})
+		V
+		where rno = 1
+    </select>
+    
+    <!-- === 강의신청하기 === -->
+    <insert id="addlecture" parameterType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+	     insert into tbl_subject(subjectid, majorid, gyowonid, classname, credit, opensemester, courseclfc, applydate, applystate)
+		 values(#{subjectid}, #{majorid}, #{gyowonid}, #{classname}, #{credit}, #{opensemester}, #{courseclfc}, sysdate, 0)
+	</insert>
+
+	
+	<!-- 건물 목록 찾기 -->
+	<select id="buildingListSearch" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.LectureroomVO">
+		select buildno, buildname
+		from tbl_building
+	</select>
+	
+	<!-- 강의실 목록 찾기 -->
+	<select id="lectureroomSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.LectureroomVO">
+		select seq_lctrid, lctrid, maxperson
+		from tbl_lectureroom
+		where buildno = #{buildno}
+	</select>
+	
+	<!-- 강의 목록  -->
+	<select id="lctrListSearch" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+		select A.deptname, A.majorid, C.classname, D.gyoname, D.gyowonid
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		JOIN
+		(select subjectid, classname
+		from tbl_subject) C
+		ON B.subjectid = C.subjectid
+		JOIN
+		(select gyowonid, gyoname
+		from tbl_gyowon) D
+		ON B.gyowonid = D.gyowonid
+		where B.subjectid = #{subjectid}
+
+	</select>
+	
+	<!-- 강의계획서 입력 -->
+	<insert id="addlectureplan" parameterType="com.spring.lmsfinal.yejinsim.model.LectureplanVO" useGeneratedKeys="true" keyColumn="seq_lectureplan" keyProperty="seq_lectureplan">
+	    insert into tbl_lectureplan(seq_lectureplan, subjectid, majorid, gyowonid, lpsummary, lpobject, lpbook, lpattendper, lphomewkper, lpexamper)
+		values(seq_lectureplan.nextval, #{subjectid}, #{majorid}, #{gyowonid}, #{lpsummary,jdbcType=VARCHAR}, #{lpobject,jdbcType=VARCHAR}, #{lpbook,jdbcType=VARCHAR}, #{lpattendper,jdbcType=VARCHAR}, #{lphomewkper,jdbcType=VARCHAR}, #{lpexamper,jdbcType=VARCHAR})
+	</insert>
+	
+	<!-- 강의계획서 받아오기 -->
+	<select id="lctrplanSearch" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.LectureplanVO">
+		select A.seq_lectureplan, A.subjectid, A.majorid, A.gyowonid, A.lpsummary, A.lpobject, A.lpbook
+	    	, A.lpattendper, A.lphomewkper, A.lpexamper, B.deptname, C.classname, D.gyoname
+		from 
+		(select seq_lectureplan, subjectid, majorid, gyowonid, lpsummary, lpobject, lpbook, lpattendper, lphomewkper, lpexamper
+		from tbl_lectureplan) A
+		JOIN
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.majorid = B.majorid
+		JOIN
+		(select subjectid, classname
+		from tbl_subject) C
+		ON A.subjectid = C.subjectid
+		JOIN
+		(select gyowonid, gyoname
+		from tbl_gyowon) D
+		ON A.gyowonid = D.gyowonid
+		where A.subjectid = #{subjectid}
+	</select>
+	
+	<!-- 강의계획서 수정하기 -->
+	<update id="editlctrplan" parameterType="com.spring.lmsfinal.yejinsim.model.LectureplanVO">
+		update tbl_lectureplan set lpsummary = #{lpsummary,jdbcType=VARCHAR}
+								, lpobject = #{lpobject,jdbcType=VARCHAR}
+								, lpbook = #{lpbook,jdbcType=VARCHAR}
+								, lpattendper = #{lpattendper,jdbcType=VARCHAR}
+								, lphomewkper = #{lphomewkper,jdbcType=VARCHAR}
+								, lpexamper = #{lpexamper,jdbcType=VARCHAR}
+		where seq_lectureplan = #{seq_lectureplan,jdbcType=VARCHAR}
+    </update>
+	
+	
+	
+	<!-- == 건물과 강의실과 정원에 따른 시간표 배열 가져오기(Ajax) == -->
+	<select id="lctrroomtimetableSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.LectureroomVO">
+		select A.periodid, A.dayid, A.seq_lctrassign, A.emptystate
+		from
+		(select seq_lctrid, buildno
+		from tbl_lectureroom) R
+		JOIN
+		(select seq_lctrassign, dayid, periodid, seq_lctrid, emptystate
+		from tbl_lectureroom_assign) A    
+		ON R.seq_lctrid = A.seq_lctrid	   
+        where R.seq_lctrid = #{seq_lctrassign}
+        order by periodid asc, dayid asc     
+	</select>
+	
+	
+	<!-- == 강의실 배정하기 == -->
+	<update id="assignlectureroom" parameterType="HashMap">	
+		update tbl_lectureroom_assign
+    		set subjectid = #{subjectid}
+        	, emptystate = 1
+			where seq_lctrassign in
+			<foreach collection="arr_Seq_lctraasign" index="i" open="(" separator="," close=")">
+			${arr_Seq_lctraasign[i]}
+	      </foreach>
+	</update>
+	
+	<!-- == 강의정원 배정하기 == -->
+	<update id="assignlectureperson" parameterType="HashMap">	
+		update tbl_subject
+    	set totalperson = #{totalperson}
+		where subjectid in ${subjectid}      
+	</update>
+	
+	<!-- 학과코드 가져오기 -->
+	<select id="getmajorid" parameterType="String" resultType="String">
+		select majorid
+		from tbl_lectureplan
+		where subjectid = #{subjectid}
+	</select>
+	
+	
+	<!-- 강의계획서 번호 가져오기 -->
+	<select id="getSeq_lectureplan" parameterType="String" resultType="String">
+		select seq_lectureplan
+		from tbl_lectureplan
+		where subjectid = #{subjectid}
+	</select>
+	
+	
+	<!-- === 주차별 강의계획서 읽어오기 === -->
+	<select id="lctrplandetailSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.LectureplanVO">
+		select lectureweek, lptopic, lpteaching, lpmaterial, lphomewk
+		from tbl_lectureplan_detail
+		where subjectid = #{subjectid}
+		order by lectureweek asc
+	</select>
+	
+	
+	<!-- 강의신청 절차끝나고 강의신청상태 변경해주기 -->
+	<update id="changeapplystate" parameterType="String">
+        update tbl_subject set applystate = '승인대기중'            
+        where  subjectid = #{subjectid,jdbcType=NUMERIC}
+    </update>
+	
+	<!-- === 주차별 강의계획서 쓰기 === -->
+	<update id="addlctrplandetail" parameterType="java.util.HashMap">
+	     <foreach collection="resendList" item="item" index="index" separator=" " open="INSERT ALL " close="SELECT * FROM DUAL">
+			into tbl_lectureplan_detail(seq_lectureplan, lectureweek, subjectid, majorid, gyowonid, lptopic, lpteaching, lpmaterial, lphomewk
+			) values(
+	        #{item.seq_lectureplan,jdbcType=INTEGER}, #{item.lectureweek,jdbcType=INTEGER}, #{item.subjectid,jdbcType=INTEGER}
+	        , #{item.majorid,jdbcType=INTEGER}, #{item.gyowonid,jdbcType=INTEGER}, #{item.lptopic,jdbcType=VARCHAR}
+	        , #{item.lpteaching,jdbcType=VARCHAR}, #{item.lpmaterial,jdbcType=VARCHAR}, #{item.lphomewk,jdbcType=VARCHAR}
+	        )
+	      </foreach>
+	</update>
+	
+	<!-- 주차별 강의계획서 수정하기 -->
+    <insert id="editlctrplandetail" parameterType="java.util.HashMap">
+       MERGE INTO tbl_lectureplan_detail R
+       USING (
+           <foreach collection="resendList" item="item" open="" close="" index="index" separator="UNION">
+               SELECT
+            #{item.seq_lectureplan,jdbcType=INTEGER} as seq_lectureplan, 
+            #{item.lectureweek,jdbcType=INTEGER} as lectureweek, 
+            #{item.subjectid,jdbcType=INTEGER} as subjectid, 
+            #{item.majorid,jdbcType=INTEGER} as majorid, 
+            #{item.gyowonid,jdbcType=INTEGER} as gyowonid, 
+            #{item.lptopic,jdbcType=VARCHAR} as lptopic, 
+            #{item.lpteaching,jdbcType=VARCHAR} as lpteaching, 
+            #{item.lpmaterial,jdbcType=VARCHAR} as lpmaterial, 
+            #{item.lphomewk,jdbcType=VARCHAR} as lphomewk
+               FROM DUAL
+           </foreach>
+       ) T
+       ON (R.LECTUREWEEK = T.lectureweek 
+      AND R.SUBJECTID = T.subjectid)
+       WHEN MATCHED THEN
+       UPDATE SET
+               R.SEQ_LECTUREPLAN = T.seq_lectureplan,
+          <!-- R.LECTUREWEEK = T.lectureweek, --> 
+          <!-- R.SUBJECTID = T.subjectid, --> 
+               R.MAJORID = T.majorid,
+               R.GYOWONID = T.gyowonid,
+               R.LPTOPIC = T.lptopic,
+               R.LPTEACHING = T.lpteaching,
+               R.LPMATERIAL = T.lpmaterial,
+               R.LPHOMEWK = T.lphomewk
+       WHEN NOT MATCHED THEN
+       INSERT (
+           SEQ_LECTUREPLAN,
+           LECTUREWEEK,
+           SUBJECTID,
+           MAJORID,
+           GYOWONID,
+           LPTOPIC,
+           LPTEACHING,
+           LPMATERIAL,
+           LPHOMEWK 
+       )
+       VALUES (
+           T.seq_lectureplan,
+           T.lectureweek,
+           T.subjectid,
+           T.majorid,
+           T.gyowonid,
+           T.lptopic,
+           T.lpteaching,
+           T.lpmaterial,
+           T.lphomewk
+       )
+   </insert>
+   
+   
+	<!-- == 교수로 로그인했을 때 강의실 홈페이지 접근했을 때  강의정보 가져오기 == -->
+	<select id="getlectureInfo" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+	    select distinct A.deptname, B.subjectid, B.classname, B.credit
+		, B.opensemester, B.applystate, B.applyperson, B.applydate, nvl(B.totalperson, NULL) as totalperson
+		, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+		, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+		            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		LEFT JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		LEFT JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		LEFT JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		LEFT JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		LEFT JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		LEFT JOIN
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+        LEFT JOIN
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+		where B.applystate = '등록완료' 
+		and B.gyowonid = #{userid}
+		and B.subjectid = #{subjectid}
+		order by B.applydate asc
+    </select>
+	
+	<!-- == 학생으로 로그인해서 강의실 홈페이지 접근했을 때 강의정보 가져오기 == -->
+	<select id="stugetlectureInfo" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+	    select distinct A.deptname, B.subjectid, B.classname, B.credit
+		, B.opensemester, B.applystate, B.applyperson, B.applydate, nvl(B.totalperson, NULL) as totalperson
+		, nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+		, nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+		            , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+		from
+		(select majorid, deptname
+		from tbl_department) A
+		JOIN 
+		(select majorid, subjectid, gyowonid, classname, credit, 
+		        opensemester, applyperson, totalperson,
+		        applystate, applydate
+		from tbl_subject) B
+		ON A.majorid = B.majorid
+		LEFT JOIN 
+		(select subjectid, periodid, dayid, seq_lctrid
+		from tbl_lectureroom_assign
+		) C
+		ON B.subjectid = C.subjectid
+		LEFT JOIN
+		(
+		select buildno, lctrid, seq_lctrid
+		from tbl_lectureroom
+		)D
+		ON C.seq_lctrid = D.seq_lctrid
+		LEFT JOIN
+		(select buildno, buildname
+		from tbl_building
+		)E
+		on D.buildno = E.buildno
+		LEFT JOIN
+		(select dayid, abvat
+		from tbl_dayofweek
+		)F
+		on C.dayid = F.dayid
+		LEFT JOIN
+		(select seq_lectureplan, subjectid
+		from tbl_lectureplan) G
+		on B.subjectid = G.subjectid
+		LEFT JOIN
+		(select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+		from (select subjectid, dayid, periodid, seq_lctrid
+		from tbl_lectureroom_assign)
+		group by subjectid
+		order by subjectid) H
+		on B.subjectid = H.subjectid
+        LEFT JOIN
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+        LEFT JOIN
+		(select courseno, stdid, subjectid 
+		from tbl_course) J
+		ON B.subjectid = J.subjectid
+		where J.courseno > 500
+		and J.stdid = #{userid}
+		and B.subjectid = #{subjectid}
+		order by B.applydate asc
+    </select>
+	
+	<select id="getClassname" parameterType="String" resultType="String">
+		select classname
+      from tbl_subject
+      where subjectid = #{subjectid}
+	</select>
+		
+	<!-- == 강의평가 결과 가져오기 == -->
+	<select id="lctrevaluresultSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+		SELECT A.firstans, A.secondans, A.thirdans, A.fourans, A.fiveans, A.sixans, A.sevenans, A.eightans, A.etcans, A.regaate 
+		FROM
+		(select courseno, firstans, secondans, thirdans, fourans, fiveans, sixans, sevenans, eightans, etcans, regaate 
+		from tbl_lecture_evalucomplete) A
+		JOIN
+		(select evaluwhether, courseno, subjectid
+		from tbl_course) B
+		ON A.courseno = B.courseno
+		WHERE B.evaluwhether = 1
+		and  B.subjectid = #{subjectid}	
+	</select>
+	
+	<!-- == 강의평가 평균치 결과 가져오기 == -->
+	<select id="lctrevaluavgresultSearch" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+		SELECT count(A.courseno) as courseno, avg(A.firstans) as firstans, avg(A.secondans) as secondans, avg(A.thirdans) as thirdans
+		, avg(A.fourans) as fourans, avg(A.fiveans) as fiveans, avg(A.sixans) as sixans, avg(A.sevenans) as sevenans,avg(A.eightans) as eightans
+		FROM
+		(select courseno, firstans, secondans, thirdans, fourans, fiveans, sixans, sevenans, eightans, etcans, regaate 
+		from tbl_lecture_evalucomplete) A
+		JOIN
+		(select courseno, subjectid
+		from tbl_course) B
+		ON A.courseno = B.courseno
+		WHERE B.subjectid = #{subjectid}	 
+	</select>
+	
+   <select id="keepLoginStudent" parameterType="HashMap" resultType="com.spring.lmsfinal.choibyoungjin.model.StudentVO">
+		select stdid, status, stdmajorid, dmajorid, minorid, stdstateid, scholarcode, gyowonid, stdname, stdemail, stdnameeng
+				, stdnation, stdbirthday, entday, entstate, stdjumin, enttype, examnum, stdpostcode, stdaddress, stdmobile
+				, schoolfrom1, graddate1, schoolfrom2, graddate2
+		from tbl_student
+		where stdid = #{userid}
+	</select>
+   
+   <select id="keepLoginGyowon" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.GyowonVO">
+		select gyowonid, status, gyoemail, gyomajorid, gyoname, gyonameeng, gyobirthday
+				, gyojumin, gyonation, gyoaddress, gyopostcode, gyomobile, position, appointmentdt
+				, workstatus, degree, career1, careerTime1, career2, careerTime2
+		from tbl_gyowon
+		where gyowonid = #{userid} 
+	</select>
+	
+	<select id="keepLoginAdmin" parameterType="HashMap" resultType="com.spring.lmsfinal.wonhyejin.model.AdminVO">
+		select userid, status
+		from tbl_admin
+		where userid = #{userid}
+	</select>
+	
+</mapper>

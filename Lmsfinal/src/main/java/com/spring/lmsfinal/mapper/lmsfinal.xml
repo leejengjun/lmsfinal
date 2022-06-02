@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="lmsfinal"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(102, '이정준', default)
+	</insert>
+
+	<!-- 시작페이지에서 메인 이미지를 보여주는 것(캐러셀) -->
+	<select id="getImgfilenameList" resultType="String">
+		select imgfilename
+		from TBL_MAIN_IMAGE
+		order by imgno desc
+	</select>
+
+	<!-- 로그인처리(학생, 교수, 관리자) -->
+	<select id="getLoginStudent" parameterType="HashMap" resultType="com.spring.lmsfinal.choibyoungjin.model.StudentVO">
+		select stdid, status, stdmajorid, dmajorid, minorid, stdstateid, scholarcode, gyowonid, stdname, stdemail, stdnameeng
+				, stdnation, stdbirthday, entday, entstate, stdjumin, enttype, examnum, stdpostcode, stdaddress, stdmobile
+				, schoolfrom1, graddate1, schoolfrom2, graddate2
+				, completesemester
+		from tbl_student
+		where stdid = #{userid} and stdpwd = #{pwd}
+	</select>
+	
+	<select id="getLoginGyowon" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.GyowonVO">
+		select gyowonid, status, gyoemail, gyomajorid, gyoname, gyonameeng, gyobirthday
+				, gyojumin, gyonation, gyoaddress, gyopostcode, gyomobile, position, appointmentdt
+				, workstatus, degree, career1, careerTime1, career2, careerTime2
+		from tbl_gyowon
+		where gyowonid = #{userid} and gyopwd = #{pwd}
+	</select>
+
+	<select id="getLoginAdmin" parameterType="HashMap" resultType="com.spring.lmsfinal.wonhyejin.model.AdminVO">
+		select userid, status
+		from tbl_admin
+		where userid = #{userid} and pwd = #{pwd}
+	</select>
+	
+	<!-- ================================================================================== -->
+	
+	<select id="getFindUserid" parameterType="HashMap" resultType="String">
+      <choose>      <!-- test에는 조건. test는 키명 -->
+          <when test="userType eq 'gyo'">
+          	select gyowonid
+            from tbl_gyowon
+            where status = 3 and gyoname = #{name} and gyoemail = #{email}
+          </when>
+          <otherwise>    <!-- otherwise 는 else -->
+            select stdid
+            from tbl_student
+            where status = 2 and stdname = #{name} and stdemail = #{email}
+          </otherwise>
+       </choose>
+   </select>
+   
+   
+   <select id="getFindPwd" parameterType="HashMap" resultType="String">
+   		<choose>      <!-- test에는 조건. test는 키명 -->
+          <when test="userType eq 'gyo'">
+          	select gyowonid
+            from tbl_gyowon
+            where status = 3 and gyowonid = #{userid} and gyoemail = #{email}
+          </when>
+          <otherwise>    <!-- otherwise 는 else -->
+            select stdid
+            from tbl_student
+            where status = 2 and stdid = #{userid} and stdemail = #{email}
+          </otherwise>
+       </choose>
+   </select>
+   
+   
+   <update id="getPwdUpdate" parameterType="HashMap">
+   		<choose>      <!-- test에는 조건. test는 키명 -->
+          <when test="userType eq 'gyo'">
+          	update tbl_gyowon set gyopwd = #{pwd}
+            where status = 3 and gyowonid = #{userid}
+          </when>
+          <otherwise>    <!-- otherwise 는 else -->
+            update tbl_student set stdpwd = #{pwd}
+            where status = 2 and stdid = #{userid}
+          </otherwise>
+       </choose>
+   </update>
+   
+
+</mapper>
+
+
+
+

@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="wonhyejin"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(101, '원혜진', default)
+	</insert>
+
+
+ <!-- 학생등록 -->
+   <insert id="stdRegisterEnd" parameterType="HashMap">
+		insert into tbl_student(stdid, stdpwd, stdname, stdjumin, stdbirthday, stdemail, stdmobile, stdmajorid, enttype, entstate, entday, stdstateid)
+          values(#{stdid}, #{stdpwd}, #{stdname}, #{stdjumin}, #{stdbirthday}, #{stdemail}, #{stdmobile}, #{stdmajorid}, #{enttype}, #{entstate}, #{entday}, #{stdstateid})
+   </insert> 
+  
+  <!-- 학번중복체크 --> 
+   <select id="stdidDuplicateCheck" parameterType="com.spring.lmsfinal.wonhyejin.model.StudentVO" resultType="int">
+            select count(*) from tbl_student
+            where stdid = #{stdid}
+   </select>
+
+  <!-- 이메일중복체크 -->    
+    <select id="stdemailDuplicateCheck" parameterType="com.spring.lmsfinal.wonhyejin.model.StudentVO" resultType="int">
+            select count(*) from tbl_student
+			where stdemail = #{stdemail}
+   </select>
+   
+   
+   <!-- 학생회원전체조회 총게시물 건수(totalCount)-->
+    <select id ="getTotalPage" parameterType="HashMap" resultType="int">
+	    select count(*)
+	    from (
+	    select A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
+	    from
+	    ( select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+	            gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+	            ,entstate,stdjumin,enttype,examnum,stdpostcode
+	            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+			from tbl_student) A
+		JOIN 
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.stdmajorid = B.majorid 
+		  <if test='searchType_1 != ""'>
+		 and lower(${searchType_1}) like '%' || lower(#{searchWord_1}) || '%'
+            </if>  
+            <if test='stdstateid != null'>
+		and lower(stdstateid) like '%'||lower(#{stdstateid})||'%'  
+		</if>
+        ) V
+    </select>
+    
+    <!-- 학생회원전체조회 -->
+     <select id ="selectPagingStudent" parameterType="String" resultType="com.spring.lmsfinal.wonhyejin.model.StudentVO">
+    
+	     select rno, stdname, stdid, stdmajorid, stdstateid, deptname
+          from 
+          (
+          select rownum AS rno, A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
+          from
+          ( 
+          select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+                 gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+                ,entstate,stdjumin,enttype,examnum,stdpostcode
+                ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+	      from tbl_student) A
+	      JOIN 
+	      (select majorid, deptname
+	      from tbl_department) B
+	      ON A.stdmajorid = B.majorid
+	   	 <if test='searchType_1 != "" and searchWord_1 != ""'>
+		 and lower(${searchType_1}) like '%'||lower(#{searchWord_1})||'%'
+		 </if>
+		 <if test='stdstateid != null'>
+		 and lower(stdstateid) like '%'||lower(#{stdstateid})||'%'  
+		 </if>
+		  )Z
+		 where rno between #{startRno} and #{endRno}
+	</select>
+
+ 
+
+	<!-- 학생1명조회 -->  
+	 <select id="studentOneDetail" parameterType="HashMap" resultType="com.spring.lmsfinal.wonhyejin.model.StudentVO">
+		  select A.stdid, A.stdpwd, A.stdname, A.stdemail, A.stdmajorid, A.stdstateid, B.deptname, B.majorid, scholarcode,
+	             gyowonid,status,stdnameeng,stdnation,stdbirthday,entday
+	            ,entstate,stdjumin,enttype,examnum,stdpostcode
+	            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+          from
+           ( select  stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+             gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+            ,entstate,stdjumin,enttype,examnum,stdpostcode
+            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+		  from tbl_student) A
+		  JOIN 
+		  (select majorid, deptname
+		  from tbl_department) B
+		  ON A.stdmajorid = B.majorid 
+          where stdname = #{stdname}
+    </select>
+
+
+<!-- 학생상태변경_휴학승인-->  
+
+   <update id="stuLeaveUpdate" parameterType="String">
+	   update tbl_student set stdstateid = '2'
+       where stdid = #{stdid}
+    </update>
+    
+
+<!-- 학생상태변경_휴학승인_apr-->  
+
+   <update id="stuLeaveAprUpdate" parameterType="String">
+	  update tbl_leave_school set approve = '승인완료'
+      where stdid = #{stdid} and approve='승인전'  
+   </update>
+    
+
+  <!-- 학생상태변경_휴학거절-->  
+
+  <update id="stuLeaveDelete" parameterType="String">
+      update tbl_student set stdstateid = '1'
+	  where stdid = #{stdid}
+  </update>  
+  
+  <!-- 학생상태변경_휴학거절_apr-->  
+
+   <update id="stuLeaveAprDelete" parameterType="String">
+	  update tbl_leave_school set approve = '승인반려'
+      where stdid = #{stdid} and approve='승인전'  
+   </update>
+      
+ 
+ 
+ <!-- 복학 -->
+ 
+ 
+ <!-- 학생상태변경_복학승인-->  
+
+   <update id="stuReturnUpdate" parameterType="String">
+	   update tbl_student set stdstateid = '1'
+       where stdid = #{stdid}
+   </update>
+    
+
+<!-- 학생상태변경_복학승인_apr-->  
+
+   <update id="stuReturnAprUpdate" parameterType="String">
+	  update tbl_return_school set approve = '승인완료'
+      where stdid = #{stdid} and approve ='승인전'  
+    </update>
+    
+
+  <!-- 학생상태변경_복학거절-->  
+
+    <update id="stuReturnDelete" parameterType="String">
+	    update tbl_student set stdstateid = '2'
+		where stdid = #{stdid}
+    </update>  
+  
+  <!-- 학생상태변경_복학거절_apr-->  
+
+   <update id="stuReturnAprDelete" parameterType="String">
+	  update tbl_return_school set approve = '승인반려'
+      where stdid = #{stdid} and approve ='승인전'  
+    </update>
+  
+  
+  
+       
+ <!--                             밑에는 교원                                          -->    
+ 
+ 
+ 
+   <!-- 교원등록  -->
+    <insert id="gyowonRegisterEnd" parameterType="HashMap">
+		  insert into tbl_gyowon(gyowonid, gyopwd, gyoname, gyojumin, gyobirthday, gyoemail, gyomobile, gyomajorid, appointmentdt, workstatus)
+          values(#{gyowonid}, #{gyopwd}, #{gyoname}, #{gyojumin}, #{gyobirthday}, #{gyoemail}, #{gyomobile}, #{gyomajorid}, #{appointmentdt}, #{workstatus})
+   </insert> 
+   
+   <!-- 교원번호중복체크 -->
+   <select id="gyowonIdDuplicateCheck" parameterType="com.spring.lmsfinal.wonhyejin.model.GyowonVO" resultType="int">
+            select count(*) from tbl_gyowon
+            where gyowonid = #{gyowonid}
+   </select>
+   
+   <!-- 교원이메일 중복체크 -->
+    <select id="gyoemailDuplicateCheck" parameterType="com.spring.lmsfinal.wonhyejin.model.GyowonVO" resultType="int">
+            select count(*) from tbl_gyowon
+			where gyoemail = #{gyoemail}
+   </select>  
+ 
+ 
+   
+   <!-- 교원회원전체조회 총게시물 건수(totalCount)-->
+    <select id ="getGTotalPage" parameterType="HashMap" resultType="int">
+		select count(*)
+		 from (   
+	        select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
+	        from
+	        ( select gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+	                 gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+	                ,career2, careerTime2, status
+	            from tbl_gyowon) A
+	            JOIN 
+	            (select majorid, deptname
+	            from tbl_department) B
+	            ON A.gyomajorid = B.majorid    
+			   <if test='searchType_1 != ""'>
+			   and lower(${searchType_1}) like '%' || lower(#{searchWord_1}) || '%'
+               </if>    
+               ) V 
+    </select>
+    
+    <!-- 교원회원전체조회  -->
+     <select id ="selectPagingGyowon" parameterType="String" resultType="com.spring.lmsfinal.wonhyejin.model.GyowonVO">
+    
+	    select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
+        from
+        ( select rownum AS rno, gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+                 gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+                ,career2, careerTime2, status
+		from tbl_gyowon) A
+		JOIN 
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.gyomajorid = B.majorid 
+	   	<if test='searchType_1 != "" and searchWord_1 != ""'>
+		and lower(${searchType_1}) like '%'||lower(#{searchWord_1})||'%'
+		</if>
+		where rno between #{startRno}  and #{endRno}
+	   </select>
+
+
+
+	 <!-- 교원1명조회 -->  
+	 <select id="gyowonOneDetail" parameterType="HashMap" resultType="com.spring.lmsfinal.wonhyejin.model.GyowonVO">
+		     
+    select A.gyowonid, A.gyopwd, A.gyoname, A.gyoemail, A.gyomajorid, A.workstatus, B.deptname, B.majorid,
+            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+            ,career2, careerTime2, status
+    from
+    (select gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+           ,career2, careerTime2, status
+		   from tbl_gyowon) A
+	JOIN 
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.gyomajorid = B.majorid 
+          where gyoname = #{gyoname}
+    </select>
+ 
+
+  <!-- 교원수강신청 회원전체조회  (페이징) 총게시물 건수(totalCount)-->
+    <select id ="getGOpenTotalPage" parameterType="HashMap" resultType="int">
+       select count(*)
+        from
+        (
+        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
+      , opensemester, applystate, applydate, totalperson
+      , dayid, lctrid, seq_lectureplan
+       from
+       (
+       select distinct A.deptname, B.subjectid, B.classname, B.credit
+      , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+      , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+      , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+                  , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+      from
+      (select majorid, deptname
+      from tbl_department) A
+      JOIN 
+      (select majorid, subjectid, gyowonid, classname, credit, 
+              opensemester, applyperson, totalperson,
+              applystate, applydate
+      from tbl_subject
+      ) B
+      ON A.majorid = B.majorid
+      lEFT JOIN 
+      (select subjectid, periodid, dayid, seq_lctrid
+      from tbl_lectureroom_assign
+      ) C
+      ON B.subjectid = C.subjectid
+      lEFT JOIN 
+      (
+      select buildno, lctrid, seq_lctrid
+      from tbl_lectureroom
+      )D
+      ON C.seq_lctrid = D.seq_lctrid
+      lEFT JOIN 
+      (select buildno, buildname
+      from tbl_building
+      )E
+      on D.buildno = E.buildno
+      lEFT JOIN 
+      (select dayid, abvat
+      from tbl_dayofweek
+      )F
+      on C.dayid = F.dayid
+      lEFT JOIN 
+      (select seq_lectureplan, subjectid
+      from tbl_lectureplan) G
+      on B.subjectid = G.subjectid
+      lEFT JOIN 
+      (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+      from (select subjectid, dayid, periodid, seq_lctrid
+      from tbl_lectureroom_assign)
+      group by subjectid
+      order by subjectid) H
+      on B.subjectid = H.subjectid
+        lEFT JOIN 
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+        where applystate='승인대기중' OR applystate= '등록완료' OR applystate= '신청반려'     
+        ) V 
+        <if test='searchType_1 != "" and searchWord_1 != ""'>
+         where lower(${searchType_1}) like '%'|| lower(#{searchWord_1}) ||'%'
+        </if>
+        <if test="applystate != ''">
+		where lower(applystate) like '%'||lower(#{applystate})||'%'  
+		</if>
+		)
+    </select>
+    
+    
+ <!--  ==== 교원 수강신청 목록 보기====  -->  
+    <select id="selectPagingGyowonOpen" parameterType="String" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">       
+   select rno, deptname, subjectid, classname, credit
+      , opensemester, applystate, applydate, totalperson
+      , dayid, lctrid, seq_lectureplan
+        from
+        (
+        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
+      , opensemester, applystate, applydate, totalperson
+      , dayid, lctrid, seq_lectureplan
+       from
+       (
+       select distinct A.deptname, B.subjectid, B.classname, B.credit
+      , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+      , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+      , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+                  , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+      from
+      (select majorid, deptname
+      from tbl_department) A
+      JOIN 
+      (select majorid, subjectid, gyowonid, classname, credit, 
+              opensemester, applyperson, totalperson,
+              applystate, applydate
+      from tbl_subject
+      ) B
+      ON A.majorid = B.majorid
+      lEFT JOIN 
+      (select subjectid, periodid, dayid, seq_lctrid
+      from tbl_lectureroom_assign
+      ) C
+      ON B.subjectid = C.subjectid
+      lEFT JOIN 
+      (
+      select buildno, lctrid, seq_lctrid
+      from tbl_lectureroom
+      )D
+      ON C.seq_lctrid = D.seq_lctrid
+      lEFT JOIN 
+      (select buildno, buildname
+      from tbl_building
+      )E
+      on D.buildno = E.buildno
+      lEFT JOIN 
+      (select dayid, abvat
+      from tbl_dayofweek
+      )F
+      on C.dayid = F.dayid
+      lEFT JOIN 
+      (select seq_lectureplan, subjectid
+      from tbl_lectureplan) G
+      on B.subjectid = G.subjectid
+      lEFT JOIN 
+      (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+      from (select subjectid, dayid, periodid, seq_lctrid
+      from tbl_lectureroom_assign)
+      group by subjectid
+      order by subjectid) H
+      on B.subjectid = H.subjectid
+        lEFT JOIN 
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+        where applystate='승인대기중' OR applystate= '등록완료' OR applystate= '신청반려'     
+        ) V 
+        <if test='searchType_1 != "" and searchWord_1 != ""'>
+         where lower(${searchType_1}) like '%'|| lower(#{searchWord_1}) ||'%'
+        </if>
+        <if test="applystate != ''">
+		 where lower(applystate) like '%'||lower(#{applystate})||'%'  
+		</if>
+		)
+         where rno between #{startRno} and #{endRno}
+      </select>
+
+
+ <!-- 교원 수강신청 승인 -->   
+    <update id="gyoOpenedUpdate" parameterType="String">
+        update tbl_subject set applystate = '등록완료'
+		where subjectid = #{subjectid}
+    </update>
+    
+  <!-- 교원 수강신청 반려 -->      
+    <update id="gyoOpenedDelete" parameterType="String">
+        update tbl_subject set applystate = '신청반려'
+		where subjectid = #{subjectid}
+    </update>
+ 
+  
+    
+</mapper>

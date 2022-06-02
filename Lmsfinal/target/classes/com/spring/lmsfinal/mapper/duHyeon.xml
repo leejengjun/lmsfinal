@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="duHyeon"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(101, '이두현', default)
+	</insert>
+	
+	<select id="getSubjectOne" parameterType="HashMap" resultType="com.spring.lmsfinal.yejinsim.model.MylectureVO">
+		select majorid, subjectid, gyowonid, classname, credit, 
+		    opensemester, applyperson, totalperson,
+		    lctrid, dayid, periodid, applystate
+		from tbl_subject
+		where GYOWONID = #{gyowonid} and SUBJECTID = #{subjectid}
+	</select>
+	
+	
+	<insert id="addTestRound" parameterType="HashMap" >
+		 insert into tbl_test_round (TESTCLFC, MAJORID, GYOWONID, SUBJECTID, EXAMTITLE, DISCLOSURE, STARTDATE, ENDDATE, QUESTIONCNT)
+                    values(seq_test_round.nextval,#{majorid}, #{gyowonid}, #{subjectid}, #{examtitle}, #{disclosure}, to_date(#{startDate},'YYYY-MM-DD hh24:mi:ss'), to_date(#{endDate},'YYYY-MM-DD hh24:mi:ss'), #{questioncnt})
+	
+	</insert>
+	
+	<resultMap type="HashMap" id="getTestRound">
+		<result property="testclfc" 			column="testclfc" 			javaType="String"/>
+		<result property="majorid" 				column="majorid" 			javaType="String"/>
+		<result property="gyowonid" 			column="gyowonid" 			javaType="String"/>
+		<result property="subjectid" 			column="subjectid" 			javaType="String"/>
+		<result property="examtitle" 			column="examtitle" 			javaType="String"/>
+		<result property="disclosure" 			column="disclosure" 		javaType="String"/>
+		<result property="startdate" 			column="startdate" 			javaType="String"/>
+		<result property="enddate" 				column="enddate" 			javaType="String"/>
+		<result property="questioncnt" 			column="questioncnt" 		javaType="String"/>
+		<result property="classname" 			column="classname" 			javaType="String"/>
+		<result property="currentquestioncnt" column="currentquestioncnt" 	javaType="String"/>
+	</resultMap>
+	
+	<select id="getTestRoundList" parameterType="HashMap" resultMap="getTestRound">
+
+        
+		select T.testclfc, T.majorid, T.gyowonid, T.subjectid, T.examtitle
+		     , T.disclosure, T.questioncnt, startdate, enddate, nvl(cnt,0) as currentquestioncnt
+		from
+		(
+			select testclfc, majorid, gyowonid, subjectid, examtitle, disclosure, questioncnt
+		     , to_char(startdate,'yyyy-mm-dd HH24:mi:ss') as startdate, to_char(enddate,'yyyy-mm-dd HH24:mi:ss') as enddate
+			from tbl_test_round 
+		) T
+		full join                           
+		(
+			select testclfc, count(*)as cnt
+			from tbl_test_question
+			group by testclfc
+		)Q
+		on T.testclfc = Q.testclfc
+		where SUBJECTID = #{subjectid}
+		order by startdate asc, enddate asc, testclfc asc
+	</select>
+	<!-- 파라맵을 이용한 테스트라운드와 학생 문제를 받아오는  -->
+	<select id="getTestRoundOne" parameterType="HashMap" resultMap="getTestRound">
+
+		select T.testclfc, T.majorid, T.gyowonid, T.subjectid, T.examtitle
+		     , T.disclosure, T.questioncnt, startdate, enddate, nvl(cnt,0)as currentquestioncnt
+		     , T.classname
+		from
+		(
+		    select T.testclfc as testclfc , T.majorid as majorid, T.gyowonid as gyowonid
+		             , S.subjectid as subjectid, T.examtitle as examtitle, T.disclosure as disclosure
+					 , to_char(T.startdate,'yyyy-MM-dd hh24:mi') AS startdate
+					 , to_char(T.enddate,'yyyy-MM-dd hh24:mi') AS enddate
+					 , T.questioncnt as questioncnt
+		             , S.classname as classname
+			from tbl_test_round T join tbl_subject S
+	        on T.subjectid = S.subjectid
+				
+		) T
+		full join                           
+		(
+			select testclfc, count(*)as cnt
+			from tbl_test_question
+			group by testclfc
+		)Q
+		on T.testclfc = Q.testclfc
+		where T.GYOWONID = #{gyowonid} and T.testclfc = #{testclfc}
+	</select>
+	
+	<!-- 테스트 라운드 수정  -->
+	<update id="modifyTestRound" parameterType="HashMap">
+		update tbl_test_round set EXAMTITLE = #{examtitle}, DISCLOSURE=#{disclosure},STARTDATE=to_date(#{startDate},'yyyy-MM-dd hh24:mi:ss')
+	      , ENDDATE=to_date(#{endDate},'yyyy-MM-dd hh24:mi:ss'), QUESTIONCNT=#{questioncnt}
+		where TESTCLFC = #{testclfc}  
+	</update>
+	
+	<resultMap type="HashMap" id="getQuestion">
+		<result property="questionseq" 	column="QUESTIONSEQ" 	javaType="String"/>
+		<result property="subjectid" 	column="SUBJECTID" 		javaType="String"/>
+		<result property="majorid" 		column="MAJORID" 		javaType="String"/>
+		<result property="gyowonid" 	column="GYOWONID" 		javaType="String"/>
+		<result property="testclfc" 	column="TESTCLFC" 		javaType="String"/>
+		<result property="question" 	column="QUESTION" 		javaType="String"/>
+		<result property="correct" 		column="CORRECT" 		javaType="String"/>
+	</resultMap>
+	
+	
+	<!-- 특정시험의 문제들의 리스트를 가져와줄 -->
+	<select id="getQuestionList" parameterType="HashMap" resultMap="getQuestion">
+		select QUESTIONSEQ, SUBJECTID, MAJORID, GYOWONID, TESTCLFC, QUESTION, CORRECT
+		from tbl_test_question
+		where testclfc = to_number(#{testclfc})
+	</select>
+	
+	
+	<!-- 나의 편의를 위해서 만든 getSMG -->
+	<resultMap type="HashMap" id="SMG">
+		<result property="answersseq" 	column="ANSWERSSEQ" 	javaType="String"/>
+		<result property="questionseq" 	column="QUESTIONSEQ" 	javaType="String"/>
+		<result property="testclfc" 	column="TESTCLFC" 		javaType="String"/>
+		<result property="subjectid" 	column="SUBJECTID" 		javaType="String"/>
+		<result property="majorid" 		column="MAJORID" 		javaType="String"/>
+		<result property="gyowonid" 	column="GYOWONID" 		javaType="String"/>
+	</resultMap>
+	
+	<select id="getSMG" parameterType="HashMap" resultMap="SMG">
+		select SUBJECTID, MAJORID, GYOWONID, TESTCLFC 
+		from tbl_test_round
+		where testclfc = #{testclfc}
+	</select>
+	
+	
+	<insert id="addQuestion" parameterType="HashMap">
+		<selectKey keyProperty="currval" resultType="String" order="BEFORE">
+			select seq_questionseq.nextval 
+			from dual
+		</selectKey>
+		
+		insert into tbl_test_question (QUESTIONSEQ, SUBJECTID, MAJORID, GYOWONID, TESTCLFC, QUESTION, CORRECT)
+							   values (#{currval}, #{subjectid}, #{majorid}, #{gyowonid}, #{testclfc}, #{question}, #{correct})
+		
+	
+	
+	</insert>
+	
+	<!-- 못찾겠어서 그냥 무식하게 seq를 받아오기 위한  -->
+	<select id="getQuestCurrentSeq" parameterType="HashMap" resultType="String">
+	
+		select Max(questionseq)
+		from tbl_test_question
+		where testclfc=#{testclfc} and gyowonid=#{gyowonid} and majorid=#{majorid} and subjectid=#{subjectid} 
+			and question=#{question} and correct=#{correct}
+	
+	</select>
+	
+	
+	
+	
+	
+	<!-- 문제 테이블을 생성에 성공한다면 list를 통하여 문제의 보기들을 insert 해 줄 것 -->
+	<insert id="addAnswer" parameterType="HashMap">
+		
+		INSERT INTO tbl_test_answers 
+		(ANSWERSSEQ, 
+		 QUESTIONSEQ, 
+		 TESTCLFC, 
+		 SUBJECTID, 
+		 MAJORID, 
+		 GYOWONID, 
+		 ANSWER)VALUES 
+		(seq_answersseq.nextval, 
+		#{questionseq}, 
+		#{testclfc}, 
+		#{subjectid}, 
+		#{majorid}, 
+		#{gyowonid}, 
+		#{answer})
+	  
+	</insert>
+	
+	<select id="getQuestionOne" parameterType="HashMap" resultMap="getQuestion">
+	
+		select QUESTIONSEQ, SUBJECTID, MAJORID, GYOWONID, TESTCLFC, QUESTION, CORRECT
+		from tbl_test_question
+		where QUESTIONSEQ = #{questionseq}
+	</select>
+	
+	<!-- answervo를 resultMap으로 생성 -->
+	<resultMap type="HashMap" id="getAnswer">
+		<result property="answersseq" column="ANSWERSSEQ" javaType="String"/>
+		<result property="answer" column="ANSWER" javaType="String"/>
+	</resultMap>
+	
+	<select id="getAnswerList" parameterType="HashMap" resultMap="getAnswer">
+	
+		select ANSWERSSEQ, ANSWER
+		from tbl_test_answers
+		where QUESTIONSEQ = #{questionseq}
+		order by questionseq asc
+	</select>
+	
+	
+	<!-- 테스트 question 수정  -->
+	<update id="modifyQuestion" parameterType="HashMap">
+		update tbl_test_question set QUESTION = #{question}, CORRECT = #{correct}
+		where QUESTIONSEQ = #{questionseq}  
+	</update>
+	
+	
+	<update id="modifyAnswer" parameterType="HashMap">
+		update tbl_test_answers set ANSWER=#{answer}
+		where ANSWERSSEQ = #{answerseq}
+	</update>
+	
+	<!-- ================================ Notice 시작 ============================================ -->
+
+	<select id="getSMGThroughSubjectid" resultMap="SMG" parameterType="HashMap">
+	
+		select SUBJECTID, MAJORID, GYOWONID
+		from TBL_SUBJECT
+		where SUBJECTID=#{subjectid}
+	
+	</select>
+	<select id="getSMGThroughNoticeNo" resultMap="SMG" parameterType="HashMap">
+		
+		select SUBJECTID, MAJORID, GYOWONID
+		from tbl_subject_notice
+		where subnoticeno=#{subnoticeno}
+	
+	</select>
+	
+	<insert id="addNotice" parameterType="HashMap">
+		insert into tbl_subject_notice(SUBNOTICENO, SNSUBJECT, SNCONTENT, SNREGDATE, SNPWD, SNSTATUS, 
+ 									   SUBJECTID, MAJORID, GYOWONID)
+		values(SEQ_SUBNOTICENO.NEXTVAL, #{snsubject}, #{sncontent}, sysdate, #{snpwd}, default,
+			  #{subjectid}, #{majorid}, #{gyowonid})
+			  
+	</insert>
+	
+	<insert id="addNoticeWithFile">
+		insert into tbl_subject_notice(SUBNOTICENO, SNSUBJECT, SNCONTENT, SNREGDATE, SNPWD, SNSTATUS, 
+ 										SNORGFILENAME, SNFILENAME, SNFILESIZE, SUBJECTID, MAJORID, GYOWONID)
+		values(SEQ_SUBNOTICENO.NEXTVAL, #{snsubject}, #{sncontent}, sysdate, #{snpwd}, default, #{snorgfilename},
+			  #{snfilename}, #{snfilesize}, #{subjectid}, #{majorid}, #{gyowonid})
+	</insert>
+	
+	
+	<select id="getTotalNoticeCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_subject_notice
+		where snstatus = 1 and subjectid = #{subjectid} 
+	</select>
+	
+	<!-- 페이징 처리와 함께 공지사항을 보여줄 것 -->
+	
+	<select id="noticeList" parameterType="HashMap" resultType="com.spring.lmsfinal.duHyeon.model.SubjectNoticeVO">
+		select subnoticeno, snsubject, sncontent, snpwd, snorgfilename, snregdate, 
+        	snfilename, snfilesize, subjectid, majorid, gyowonid
+	    from 
+	    (
+	    	select rownum as rno, subnoticeno, snsubject, sncontent, snpwd, snorgfilename, snregdate, 
+        	snfilename, snfilesize, subjectid, majorid, gyowonid
+	        from
+	        (
+	        	select subnoticeno, snsubject, sncontent, snpwd, snorgfilename,
+	                   to_char(snregdate, 'yyyy-mm-dd hh24:mi:ss') AS snregdate, 
+	                   snfilename, snfilesize, subjectid, majorid, gyowonid
+	            from tbl_subject_notice
+	            where snstatus = 1 and subjectid = #{subjectid}
+	        ) V 
+	    ) T
+		where rno between #{startRno} and #{endRno}
+		order by snregdate desc
+	</select>
+	
+	<select id="getNoticeOne" parameterType="HashMap" resultType="com.spring.lmsfinal.duHyeon.model.SubjectNoticeVO">
+			
+		select subnoticeno, snsubject, sncontent, to_char(snregdate, 'yyyy-MM-dd HH24:mi:ss') as snregdate, snpwd, snstatus, nvl(snorgfilename, '없음') as snorgfilename
+			 , nvl(snfilename, '없음') as snfilename, nvl(snfilesize, 0) as snfilesize, N.subjectid, N.majorid, N.gyowonid, S.classname
+		from tbl_subject_notice N join tbl_subject S
+		ON N.subjectid = S.subjectid
+		where subnoticeno = #{subnoticeno}
+		
+	</select>
+	
+	<!-- tbl_course 에서 smgMap을 가지고 강의 코드들을 받아 올 것임 -->
+	<resultMap type="HashMap" id="getattList">
+		<result property="stdname" 		column="stdname" 		javaType="String"/>
+		<result property="courseno" 	column="courseno" 		javaType="String"/>
+		<result property="stdid" 		column="stdid" 			javaType="String"/>
+		<result property="appsemester" 	column="appsemester" 	javaType="String"/>
+		<result property="evaluwhether" column="evaluwhether" 	javaType="String"/>
+		<result property="subjectid" 	column="subjectid" 		javaType="String"/>
+		<result property="majorid" 		column="majorid" 		javaType="String"/>
+		<result property="gyowonid" 	column="gyowonid" 		javaType="String"/>
+		<result property="attendweek" 	column="attendweek" 	javaType="String"/>
+		<result property="tardy" 		column="tardy" 			javaType="String"/>
+		<result property="attendance" 	column="attendance" 	javaType="String"/>
+		<result property="absent" 		column="absent" 		javaType="String"/>
+	</resultMap>
+	
+	<select id="getattendanceList" parameterType="HashMap" resultMap="getattList">
+		select A.stdname, A.courseno, A.stdid, A.appsemester, A.evaluwhether,
+           A.subjectid, A.majorid, A.gyowonid, attendweek, tardy, attendance, absent
+		from
+		(
+		    select S.stdname, C.courseno, C.stdid, appsemester, evaluwhether,
+		           C.subjectid, C.majorid, C.gyowonid
+		    from tbl_course C join tbl_student S
+		    on C.stdid = S.stdid
+		    where C.gyowonid = #{gyowonid} and C.subjectid = #{subjectid} and C.majorid = #{majorid}
+		) A
+		join
+		(
+		    select attendweek, courseno, tardy, attendance, absent
+		    from tbl_attendance
+		) W
+		on A.courseno = W.courseno
+		where attendweek = #{attendweek}
+	
+	</select>
+	
+	<select id="getstudentList" parameterType="HashMap" resultMap="getattList">
+	    select S.stdname, C.courseno, C.stdid, appsemester, evaluwhether,
+	           C.subjectid, C.majorid, C.gyowonid
+	    from tbl_course C join tbl_student S
+	    on C.stdid = S.stdid
+	    where C.gyowonid = #{gyowonid} and C.subjectid = #{subjectid} and C.majorid = #{majorid}
+		
+	</select>
+	
+	
+	
+	<select id="getTotalStCount" parameterType="HashMap" resultType="int">
+	    select count(*) as cnt
+	    from tbl_course
+	    where subjectid = #{subjectid}
+	</select>
+	
+	<insert id="checkattend" parameterType="HashMap">
+	
+		insert into tbl_attendance (ATTENDWEEK, COURSENO, TARDY, ATTENDANCE, ABSENT) 
+							values (#{attendweek}, #{courseno}, #{tardy}, #{attend}, #{absent})	
+	
+	</insert>
+	
+	<update id="updateAtt" parameterType="HashMap">
+		update tbl_attendance set 
+		 tardy = #{tardy}, attendance=#{attendance}, absent =#{absent}
+		where attendweek = #{attendweek} and courseno = #{courseno}
+	</update>
+	
+	
+	
+	<!-- 학생의 이름 학번 강의 명 시험점수들을 입력해줄수 있는 컬럼들을 리스트로 보내줄곳 다음은 디테일하게 보여줄곳을 만들 것이다. -->
+	
+	<resultMap type="HashMap" id="getGradeResult">
+		<result property="stdname" 		column="stdname" 		javaType="String"/>
+		<result property="classname" 	column="classname" 		javaType="String"/>
+		<result property="courseno" 	column="courseno" 		javaType="String"/>
+		<result property="stdid" 		column="stdid" 			javaType="String"/>
+		<result property="appsemester" 	column="appsemester" 	javaType="String"/>
+		<result property="evaluwhether" column="evaluwhether" 	javaType="String"/>
+		<result property="subjectid" 	column="subjectid" 		javaType="String"/>
+		<result property="majorid" 		column="majorid" 		javaType="String"/>
+		<result property="gyowonid" 	column="gyowonid" 		javaType="String"/>
+		<result property="midscore" 	column="midscore" 		javaType="String"/>
+		<result property="finalscore" 	column="finalscore" 	javaType="String"/>
+		<result property="attscore" 	column="attscore" 		javaType="String"/>
+		<result property="taskscore" 	column="taskscore" 		javaType="String"/>
+		<result property="grade" 		column="grade" 			javaType="String"/>
+	</resultMap>
+	
+	<select id="getGradeResult" resultMap="getGradeResult" parameterType="HashMap">
+		select A.stdname, classname, A.courseno, A.stdid, A.appsemester, A.evaluwhether, 
+		       A.subjectid, A.majorid, A.gyowonid, MIDSCORE, FINALSCORE, ATTSCORE, TASKSCORE, GRADE
+		from
+		(
+		    select C.stdname, C.courseno, C.stdid, appsemester, evaluwhether,
+		               C.subjectid, C.majorid, C.gyowonid ,D.classname
+		    from
+		    (
+		        select S.stdname, C.courseno, C.stdid, appsemester, evaluwhether,
+		               C.subjectid, C.majorid, C.gyowonid
+		        from tbl_course C join tbl_student S
+		        on C.stdid = S.stdid
+		    ) C
+		    JOIN
+		    (
+		        select classname, subjectid
+		        from tbl_subject
+		        where  subjectid=#{subjectid} 
+		    ) D
+		    On C.subjectid = D.subjectid
+		) A
+		left join
+		(
+		    select COURSENO, MIDSCORE, FINALSCORE, ATTSCORE, TASKSCORE, GRADE
+		    from tbl_grade_result
+		) W
+		on A.courseno = W.courseno
+		<if test="courseno != null">
+			where A.courseno = #{courseno}
+		</if>
+	</select>
+	
+	<!-- 수강테이블에서 smg 뽑아올거 -->
+	
+	<resultMap type="HashMap" id="SMGThroughCourseno">
+		<result property="subjectid" column="subjectid" javaType="String"/>
+		<result property="majorid" column="majorid" javaType="String"/>
+		<result property="gyowonid" column="gyowonid" javaType="String"/>
+	</resultMap>
+	
+	<select id="getSMGThroughCourseno" resultMap="SMGThroughCourseno" parameterType="HashMap">
+		select subjectid, majorid, gyowonid
+		from tbl_course
+		where courseno = #{courseno}
+	</select> 
+	
+	<!-- 학생성적 수정 -->
+	<update id="updatecredit" parameterType="HashMap" >
+		update tbl_grade_result set midscore=#{midscore}, finalscore=#{finalscore},
+									attscore=#{attscore}, TASKSCORE=#{taskscore}, grade=#{grade}
+		where courseno=#{courseno}							
+									
+	</update>
+	
+	
+	<insert id="insertcredit">
+		insert into tbl_grade_result (COURSENO, MIDSCORE, FINALSCORE, ATTSCORE, TASKSCORE, GRADE)
+							values(#{courseno}, #{midscore}, #{finalscore}, #{attscore}, #{taskscore}, #{grade} )
+	</insert>
+	
+	<!-- 출석 지각 결석 순서로 리스트에 넣어준다. -->
+	<resultMap type="HashMap" id="getAttendCnt">
+		<result property="absent" column="absent" javaType="String"/>
+		<result property="attendance" column="attendance" javaType="String"/>
+		<result property="tardy" column="tardy" javaType="String"/>
+	
+	</resultMap>
+	
+	
+	
+	<select id="getAttendCnt" parameterType="HashMap" resultMap="getAttendCnt">
+		
+		select absent, attendance, tardy
+		from tbl_attendance
+		where courseno = #{courseno}
+	
+	</select>
+	
+	
+	
+	<update id="modifyNotice" parameterType="com.spring.lmsfinal.duHyeon.model.SubjectNoticeVO">
+		
+		update tbl_subject_notice set snsubject=#{snsubject}, sncontent=#{sncontent}
+		where subnoticeno = #{subnoticeno}
+	
+	</update>
+	
+	<update id="modifyNoticeWithFile" parameterType="com.spring.lmsfinal.duHyeon.model.SubjectNoticeVO">
+		
+		update tbl_subject_notice set snsubject=#{snsubject}, sncontent=#{sncontent},
+									  snfilename=#{snfilename}, snorgfilename=#{snorgfilename},snfilesize=#{snfilesize}
+		where subnoticeno = #{subnoticeno}
+	
+	</update>
+	
+	<select id="isCourse" resultType="int" parameterType="HashMap">
+		select count(*)
+        from tbl_course
+        where stdid= #{stdid} and subjectid = #{subjectid}
+	</select>
+	
+	
+	<insert id="insertStudentExam" parameterType="com.spring.lmsfinal.duHyeon.model.StudentExamVO">
+		
+		insert into tbl_student_exam (TESTCLFC, MAJORID, GYOWONID, SUBJECTID, STDID, SUBMIT, SCORE, QUESTIONARR, CHECKARR)
+		values(#{testclfc}, #{majorid}, #{gyowonid}, #{subjectid}, #{stdid}, 1, #{score} ,'', '')
+		
+		
+	</insert>
+	
+	
+	<select id="isTakeTheExam" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_student_exam
+		where stdid=#{stdid} and testclfc=#{testclfc}
+	</select>
+	
+	
+	<resultMap type="HashMap" id="getExamtitleAndScore">
+		<result property="examtitle" column="examtitle" javaType="String"/>
+		<result property="score" column="score" javaType="String"/>
+	</resultMap>
+	
+	
+	<select id="getExamtitleAndScore" resultMap="getExamtitleAndScore" parameterType="HashMap">
+	
+	    select examtitle, score 
+	    from 
+	    (
+	        select examtitle , testclfc
+	        from tbl_test_round
+	        where subjectid = #{subjectid}
+	    ) S
+	    left join
+	    (
+	        select score, stdid, testclfc
+	        from tbl_student_exam
+	        where stdid = #{stdid}
+	    ) E
+	    on S.testclfc = E.testclfc 
+	    
+    </select>
+    
+    <resultMap type="HashMap" id="getCompute">
+    	<result property="lpattendper" column="LPATTENDPER" javaType="String"/>
+    	<result property="lphomewkper" column="LPHOMEWKPER" javaType="String"/>
+    	<result property="lpexamper" column="LPEXAMPER" javaType="String"/>
+    </resultMap>
+    
+    
+    <select id="getCompute" resultMap="getCompute" parameterType="HashMap">
+        select LPATTENDPER, LPHOMEWKPER, LPEXAMPER
+        from tbl_lectureplan
+        where subjectid = #{subjectid}
+    </select>
+
+	<select id="getTestScore" parameterType="HashMap" resultMap="getExamtitleAndScore">
+		select score 
+		from tbl_student_exam
+		where stdid = #{stdid} and testclfc=#{testclfc}
+	</select>
+
+
+</mapper>
+
+    

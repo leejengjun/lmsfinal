@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="jeongKyeongEun"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(101, '정경은', default)
+	</insert>
+
+	<!-- // ==== 글쓰기(파일 첨부가 없는 글쓰기) === // -->
+	<insert id="add" parameterType="com.spring.lmsfinal.jeongKyeongEun.model.NoticeVO">
+		insert into tbl_notice(noticeno, nsubject, ncontent, ncnt, nregdate, nstatus)
+		values(seq_noticeno.nextval, #{nsubject}, #{ncontent}, default, default, default)
+	</insert>
+	
+	
+	<!-- === 글쓰기(파일첨부가 있는 글쓰기) === -->
+	<insert id="add_withFile" parameterType="com.spring.lmsfinal.jeongKyeongEun.model.NoticeVO">
+			insert into tbl_notice(noticeno, nsubject, ncontent, ncnt, nregdate, nstatus, nfilename, norgfile, nfilesize)
+			values(seq_noticeno.nextval, #{nsubject}, #{ncontent}, default, default, default, #{nfilename}, #{norgfile}, #{nfilesize})
+	</insert>
+	
+	<!-- === 총 게시물 건수(totalCount) 구하기 - 검색이 있을 때와 검색이 없을 때로 나뉜다. -->
+    <select id="getTotalCount" parameterType="HashMap" resultType="int">   <!-- 지금 쓰고 있는건 myBatis -->
+    	select count(*)
+		from tbl_notice
+		where nstatus = 1
+		<if test='searchType != ""'>
+		and  lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%'
+		</if>
+    </select>
+	
+	
+	<!-- === #160 파일첨부가 있는 답변형 게시판의 페이징 처리한 글목록 가져오기(검색이 있든지, 검색이 없든지 모두 다 포함 한 것)  === -->
+    <select id="boardListSearchWithPaging" parameterType="HashMap" resultType="com.spring.lmsfinal.jeongKyeongEun.model.NoticeVO"> 
+		select noticeno, nsubject, ncnt, nregdate,
+		       nfilename
+		from 
+		(
+		    select rownum AS rno,
+		           noticeno, nsubject, ncnt, nregdate,
+		           nfilename 
+		    from 
+		    ( 
+		       select noticeno, nsubject, ncnt,
+		              to_char(nregdate, 'yyyy-mm-dd hh24:mi:ss') AS nregdate, 
+		              nfilename 
+		        from tbl_notice
+		        where nstatus = 1
+		        <if test='searchType != "" and searchWord != ""'>
+		        and lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%'
+		        </if>    
+				order by noticeno desc         
+		    ) V 
+		) T 
+		where rno between #{startRno} and #{endRno}
+    </select>
+    
+    
+    <!-- === #111 검색어 입력시 자동글 완성하기 6 === -->
+    <select id="wordSearchShow" parameterType="HashMap" resultType="String">
+    	<choose>   	<!-- test에는 조건. test는 키명 -->
+    		<when test="searchType eq 'name'">
+    			select distinct ${searchType}
+    		</when>
+    		<otherwise>    <!-- otherwise 는 else -->
+    			select ${searchType}
+    		</otherwise>
+    	</choose>
+    	from tbl_notice
+    	where nstatus = 1
+    	and lower(${searchType}) like '%'||lower(#{searchWord})||'%'
+    	<!-- select 문에서 distinct 와 order by 절을 함께 사용할때는 조심해야 한다.
+             order by 절에는 select 문에서 사용된 컬럼만 들어올 수가 있다.
+                            또는 order by 절을 사용하지 않아야 한다.
+       -->
+       <choose>   	<!-- test에는 조건. test는 키명 -->
+    		<when test="searchType neq 'subject'">
+    			order by ${searchType} asc
+    		</when>
+    		<otherwise>    <!-- otherwise 는 else -->
+    			order by noticeno desc
+    		</otherwise>
+    	</choose>
+    </select>
+    
+    
+    <!-- // ==== #161 (댓글 및 답변글쓰기 및 파일첨부가 있는 게시판에서) 글 한개 조회하기 === // 
+				 먼저 위의 #140 을 주석처리 한 다음에 아래와 같이 한다.  -->
+	<select id="getView" parameterType="HashMap" resultType="com.spring.lmsfinal.jeongKyeongEun.model.NoticeVO">
+		select previousnno, previousnsubject,
+		       noticeno, nsubject, ncontent, ncnt, nregdate,
+		       nextnno, nextnsubject,
+		       nfilename ,norgfile, nfilesize
+		from
+		(
+		    select lag(noticeno,1) over(order by noticeno desc) AS previousnno,
+		           lag(nsubject,1) over(order by noticeno desc) AS previousnsubject,
+		           
+		           noticeno, nsubject, ncontent, ncnt,
+		           to_char(nregdate, 'yyyy-mm-dd hh24:mi:ss') as nregdate,
+		           
+		           lead(noticeno,1) over(order by noticeno desc) AS nextnno,
+		           lead(nsubject,1) over(order by noticeno desc) AS nextnsubject,
+		           
+		           nfilename ,norgfile, nfilesize
+		    from tbl_notice
+		    where nstatus = 1
+		    <if test='searchType != "" and searchWord != ""'>
+		    and lower(${searchType}) like '%'||lower(#{searchWord})||'%'
+			</if>
+		) V
+		where V.noticeno = #{noticeno}
+	</select>
+	
+    
+    <!-- // ==== #67 글 조회수 1 증가하기 === // -->
+	<update id="setAddRedaCount" parameterType="int">  <!-- 아이디는 BoardDAO에 있는 id 값 -->
+		update tbl_notice set ncnt = ncnt + 1
+		where noticeno = #{noticeno}
+	</update>
+    
+	
+	<!--  ==== #74 글 한 개 수정하기 ===  -->
+	<update id="edit" parameterType="com.spring.lmsfinal.jeongKyeongEun.model.NoticeVO">  <!-- 아이디는 BoardDAO에 있는 id 값 -->
+		update tbl_notice set nsubject = #{nsubject}
+						    , ncontent = #{ncontent}
+		where noticeno = #{noticeno}
+	</update>
+	
+	
+	<!--  ==== #80 글 한 개 삭제하기 ===  -->
+	<delete id="del" parameterType="HashMap">   <!-- 아이디는 BoardDAO에 있는 id 값 -->
+		delete from tbl_notice
+		where noticeno = #{noticeno}
+	</delete>
+    
+    
+</mapper>

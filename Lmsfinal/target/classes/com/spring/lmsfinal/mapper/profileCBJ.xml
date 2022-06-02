@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="profileCBJ"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<select id="test_select" resultType="com.spring.lmsfinal.choibyoungjin.model.TestVO">
+		select no, name, to_char(writeday, 'yyyy-mm-dd hh24:mi:ss') AS writeday
+		from spring_test
+		order by writeday desc
+	</select>
+
+	<select id="profile_select" resultType="com.spring.lmsfinal.choibyoungjin.model.StudentVO">
+		select stdid, stdname, stdnameeng, stdbirthday
+		     , minorid, stdstateid, entstate
+		     , dmajorid, minorid, entday, stdjumin, stdnation
+		     , gyowonid, enttype, examnum
+		     , stdpostcode, stdmobile, stdemail, stdaddress
+		     , schoolfrom1, graddate1, schoolfrom2, graddate2
+		from tbl_student
+	</select>
+	
+	<select id="profile_select_one" parameterType="HashMap" resultType="com.spring.lmsfinal.choibyoungjin.model.StudentVO">
+		select stdid, stdname, stdnameeng, stdbirthday
+		     , entstate, entday, substr(stdjumin,0,6) || '-' || substr(stdjumin,7) as stdjumin, stdnation, enttype, examnum
+		     , stdpostcode, substr(stdmobile,0,3) || '-' || substr(stdmobile,4,4) || '-' || substr(stdmobile,8,4) as stdmobile_hyphen, stdmobile, stdemail, stdaddress
+		     , schoolfrom1, graddate1, schoolfrom2, graddate2
+		     , majorname ,minorname, dmajorname, statename, gyoname, grade
+		     , completesemester
+		     from
+		(
+		select stdid, stdname, stdnameeng, to_char(stdbirthday, 'YYYY-MM-DD') as stdbirthday
+		     , stdmajorid, stdstateid, entstate
+		     , nvl(dmajorid, 0) as dmajorid, nvl(minorid, 0) as minorid, to_char(entday, 'YYYY-MM-DD') as entday, stdjumin, stdnation
+		     , gyowonid, enttype, examnum
+		     , stdpostcode, stdmobile, stdemail, stdaddress
+		     , schoolfrom1, to_char(graddate1, 'YYYY-MM') as graddate1, schoolfrom2, to_char(graddate2, 'YYYY-MM') as graddate2
+		     , substr(sysdate,0,2) - substr(entday,0,2) + 1 as grade
+		     , completesemester
+		from tbl_student
+		where stdid = #{stdid}
+		) a
+		join 
+		(
+		select deptname as majorname     
+		     , majorid as majorid     
+		from tbl_department
+		)b
+		on a.stdmajorid = b.majorid
+		join 
+		(
+		select deptname as minorname     
+		     , majorid as minorid     
+		from tbl_department
+		)c
+		on a.minorid = c.minorid
+		join 
+		(
+		select deptname as dmajorname     
+		     , majorid as dmajorid     
+		from tbl_department
+		)d
+		on a.dmajorid = d.dmajorid
+		join
+		tbl_stdstate e
+		on a.stdstateid = e.stdstateid
+		join
+		tbl_gyowon f
+		on a.gyowonid = f.gyowonid
+	</select>
+	
+
+	<update id="profileEdit" parameterType="com.spring.lmsfinal.choibyoungjin.model.StudentVO">
+		update tbl_student set stdpostcode = #{stdpostcode}, stdmobile = #{stdmobile}, stdaddress = #{stdaddress}
+		where stdid = #{stdid}
+	</update>
+
+</mapper>

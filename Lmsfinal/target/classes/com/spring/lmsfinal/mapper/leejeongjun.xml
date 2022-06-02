@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="leejeongjun"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+
+	<insert id="test_insert">
+		insert into spring_test(no, name, writeday)
+		values(101, '이정준', default)
+	</insert>
+	
+	<!-- // 해당 학기에 수강한 과목들 조회하기 -->
+	<resultMap type="HashMap" id="inputSemesterList_Map">
+		<result property="courseno"			column="courseno" 		javaType="String" />
+		<result property="appsemester"		column="appsemester"	javaType="String" />
+		<result property="classname"	 	column="classname" 		javaType="String" />
+		<result property="subjectid"	 	column="subjectid" 		javaType="String" />
+		<result property="gyoname" 			column="gyoname" 		javaType="String" />
+		<result property="evaluwhether" 	column="evaluwhether" 	javaType="String" />
+	</resultMap>
+	<select id="inputSemesterList" parameterType="HashMap" resultMap="inputSemesterList_Map">
+		select c.courseno, c.appsemester ,S.classname , C.subjectid, G.gyoname, C.evaluwhether
+		from tbl_course C JOIN tbl_subject S
+		ON C.subjectid = S.subjectid
+		JOIN tbl_gyowon G
+		ON S.gyowonid = G.gyowonid
+		where appsemester = #{inputSemester} and stdid = #{stdid}
+		order by c.courseno
+	</select>
+
+
+	<!-- // 선택한 과목의 수강코드로 해당 강의평가 문항 가져오기 -->
+	<resultMap type="HashMap" id="choice_LectureEvaluationQuestions_Map">
+		<result property="evalucode" 	column="evalucode" 	javaType="String"/>
+		<result property="courseno" 	column="courseno" 	javaType="String"/>
+		<result property="classname" 	column="classname" 	javaType="String"/>
+		<result property="gyoname" 		column="gyoname" 	javaType="String"/>
+
+	</resultMap>
+	<select id="choice_LectureEvaluationQuestions" parameterType="String" resultMap="choice_LectureEvaluationQuestions_Map">
+		select L.evalucode, C.courseno, S.classname, G.gyoname
+		from tbl_course C JOIN tbl_subject S
+		ON C.subjectid = S.subjectid
+		JOIN tbl_gyowon G
+		ON S.gyowonid = G.gyowonid
+		JOIN tbl_lecture_evalucomplete L
+		on C.courseno = L.courseno
+		where L.courseno = #{choice_courseno}
+	</select>
+	
+
+	<!-- // 강의평가 체크한 값들을 강의평가 완료 테이블에 insert 하기 // -->
+	<update id="addlectureEvaluation" parameterType="HashMap">
+		update tbl_lecture_evalucomplete set firstans = #{firstans}, secondans = #{secondans}, thirdans = #{thirdans}, fourans = #{fourans}
+										   , fiveans = #{fiveans}, sixans = #{sixans}, sevenans = #{sevenans}, eightans = #{eightans}
+										   , etcans = #{etcans}
+		where courseno = #{courseno} and evalucode = #{evalucode}
+	</update>	
+
+
+	<!-- // 강의평가유무 업데이트하기 -->
+	<update id="updateLectureEvaluation" parameterType="HashMap">
+		update tbl_course set evaluwhether = 1
+		where courseno = #{courseno}
+	</update>	
+
+
+	<!-- // 로그인한 학생정보 가져오기 -->
+	<select id="selectOneStudent" parameterType="String" resultType="Map">
+		select stdid, stdname, d.deptname , statename, to_char(stdbirthday, 'yyyy-mm-dd') AS stdbirthday
+		     , stdmobile, stdemail, completesemester, stdpostcode, stdaddress
+		from tbl_student S JOIN tbl_stdstate STS
+		on S.stdstateid = sts.stdstateid
+		JOIN tbl_department D
+		on d.majorid = s.stdmajorid
+		where stdid = #{get_stdid}
+	</select>
+
+
+	<!-- // 휴학신청 유무 확인하기 -->
+	<select id="countApprove" parameterType="String" resultType="Map">
+		select count(approve) AS approve
+		from TBL_LEAVE_SCHOOL
+		where stdid = #{stdid} and approve = #{approve}
+	</select>
+	
+	
+	<!-- // 일반휴학신청하기 -->
+	<insert id="leaveAdd" parameterType="com.spring.lmsfinal.leejeongjun.model.Leave_schoolVO" >
+		insert into tbl_leave_school(leaveno, stdid, startsemester, endsemester, regdate, approve, returnsemester, leavetype, leavereason)
+		values(seq_leaveno.nextval, #{stdid}, #{startsemester}, #{endsemester}, default, '승인전', #{returnsemester}, #{leavetype}, #{leavereason})
+	</insert>
+	
+	
+	<!-- // 파일첨부 있는 군휴학 신청하기 -->
+	<insert id="leaveArmyAdd" parameterType="com.spring.lmsfinal.leejeongjun.model.Leave_armyVO">
+		insert into tbl_leave_school(leaveno, stdid, startsemester, regdate, approve, returnsemester, leavetype, fileName, orgFilename, fileSize, armytype, armystartdate, armyenddate)
+		values(seq_leaveno.nextval, #{stdid}, #{startsemester_army}, default, '승인전', #{returnsemester_army}, #{leavetype}, #{fileName}, #{orgFilename}, #{fileSize}, #{armytype}, #{armystartdate}, #{armyenddate})
+	</insert>
+
+
+	<!-- // 로그인한 학생의 모든 휴학내역 조회 -->
+	<resultMap type="HashMap" id="leave_list_Map">
+		<result property="leaveno" 			column="leaveno" 		javaType="String" />
+		<result property="stdid" 			column="stdid" 			javaType="String" />
+		<result property="startsemester" 	column="startsemester" 	javaType="String" />
+		<result property="endsemester" 		column="endsemester" 	javaType="String" />
+		<result property="filename" 		column="filename" 		javaType="String" />
+		<result property="orgfilename" 		column="orgfilename" 	javaType="String" />
+		<result property="filesize" 		column="filesize" 		javaType="String" />
+		<result property="regdate" 			column="regdate" 		javaType="String" />
+		<result property="approve" 			column="approve" 		javaType="String" />
+		<result property="noreason" 		column="noreason" 		javaType="String" />
+		<result property="returnsemester" 	column="returnsemester" javaType="String" />
+		<result property="leavetype" 		column="leavetype" 		javaType="String" />
+		<result property="leavereason" 		column="leavereason" 	javaType="String" />
+		<result property="returnschool" 	column="returnschool" 	javaType="String" />
+		<result property="armytype" 		column="armytype" 		javaType="String" />
+		<result property="armystartdate" 	column="armystartdate" 	javaType="String" />
+		<result property="armyenddate" 		column="armyenddate" 	javaType="String" />
+	</resultMap>
+	<select id="leave_list" parameterType="String" resultMap="leave_list_Map">
+		select leaveno, stdid, startsemester , endsemester, filename, orgfilename, filesize
+		     , to_char(regdate, 'yyyy-mm-dd') AS regdate, approve, noreason, returnsemester
+		     , leavetype, leavereason, returnschool, armytype, armystartdate, armyenddate
+		from TBL_LEAVE_SCHOOL
+		where stdid = #{get_stdid}
+	</select>
+
+
+	<!-- // 파일첨부 있는 1개 휴학내역 조회 -->
+	<select id="getViewleave" parameterType="HashMap" resultType="com.spring.lmsfinal.leejeongjun.model.Leave_armyVO">
+		select leaveno, stdid, startsemester , endsemester, filename, orgfilename, filesize
+		     , to_char(regdate, 'yyyy-mm-dd') AS regdate, approve, noreason, returnsemester
+		     , leavetype, leavereason, returnschool, armytype, armystartdate, armyenddate
+		from TBL_LEAVE_SCHOOL
+		where leaveno = #{leaveno}
+	</select>
+
+
+	<!-- // 휴학신청 취소하기 -->
+	<delete id="delLeave" parameterType="HashMap">
+		delete from TBL_LEAVE_SCHOOL
+		where leaveno = #{leaveno}
+	</delete>
+
+	
+	<!-- // 일반휴학신청 수정하기 -->
+	<update id="edit_leave" parameterType="com.spring.lmsfinal.leejeongjun.model.Leave_schoolVO">
+		update tbl_leave_school set leavereason = #{leavereason}
+		where leaveno = #{leaveno}
+	</update>
+
+
+	<!-- // 군휴학신청 수정하기 -->
+	<update id="edit_leaveArmy" parameterType="com.spring.lmsfinal.leejeongjun.model.Leave_armyVO">
+		update tbl_leave_school set fileName = #{fileName}
+								  , orgFilename = #{orgFilename}
+								  , fileSize = #{fileSize}
+								  , armytype = #{armytype}
+								  , armystartdate = #{armystartdate}
+								  , armyenddate = #{armyenddate}
+								  , startsemester = #{startsemester_army}
+								  , returnsemester = #{returnsemester_army}
+		where leaveno = #{leaveno}
+	</update>
+
+
+	<!-- // 복학예정인 휴학내역 가져오기 -->
+	<select id="getleaveReturn" parameterType="HashMap" resultType="Map">
+		select leaveno, stdid, startsemester, endsemester, filename, orgfilename, filesize
+		     , to_char(regdate, 'yyyy-mm-dd') AS regdate, approve, noreason, returnsemester
+		     , leavetype, leavereason, returnschool, armytype, armystartdate, armyenddate
+		from TBL_LEAVE_SCHOOL
+		where stdid = #{stdid} and returnsemester = #{comesem} and approve='승인완료'
+	</select>
+
+	
+	<!-- // 복학신청하기(파일첨부x) -->
+	<insert id="addReturnSchool" parameterType="HashMap">
+		insert into tbl_return_school(returnseq, stdid, returnsemester, returntype, regdate, approve)
+		values(seq_returnseq.nextval, #{stdid}, #{returnsemester}, #{returntype}, sysdate, '승인전')
+	</insert>
+
+
+	<!-- // 복학내역조회(파일첨부x) -->
+	<resultMap type="HashMap" id="returnList_Map">
+		<result property="returnsemester" column="returnsemester" javaType="String"/>
+		<result property="regdate" column="regdate" javaType="String"/>
+		<result property="returntype" column="returntype" javaType="String"/>
+		<result property="approve" column="approve" javaType="String"/>
+		<result property="returnseq" column="returnseq" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+	</resultMap>
+	<select id="returnList" parameterType="HashMap" resultMap="returnList_Map">
+		select returnseq, returnsemester, to_char(regdate, 'yyyy-mm-dd') AS regdate, returntype, approve, filename
+		from tbl_return_school
+		where stdid = #{stdid}
+	</select>
+
+	
+	<!-- // 복학신청유무확인(파일첨부x) -->
+	<select id="checkReturn" parameterType="String" resultType="int">
+		select count(approve)
+		from tbl_return_school
+		where stdid = #{get_stdid} and approve = '승인전'
+	</select>
+
+
+	<!-- // 복학신청취소하기 -->
+	<delete id="delreturn" parameterType="HashMap">
+		delete from tbl_return_school
+		where returnseq = #{returnseq}
+	</delete>
+
+
+	<!-- // 복학신청하기(파일첨부o) -->
+	<insert id="add_returnAttach" parameterType="com.spring.lmsfinal.leejeongjun.model.Return_schoolVO">
+		insert into tbl_return_school(returnseq, stdid, returnsemester, returntype, regdate, approve, fileName, orgFilename, fileSize)
+		values(seq_returnseq.nextval, #{stdid}, #{returnsemester}, #{returntype}, sysdate, '승인전', #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+
+	
+	<!-- // 복학내역조회(파일첨부O) -->
+	<resultMap type="HashMap" id="returnListAttach_Map">
+		<result property="returnsemester" column="returnsemester" javaType="String"/>
+		<result property="regdate" column="regdate" javaType="String"/>
+		<result property="returntype" column="returntype" javaType="String"/>
+		<result property="approve" column="approve" javaType="String"/>
+		<result property="returnseq" column="returnseq" javaType="String"/>
+		<result property="orgfilename" column="orgfilename" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+	</resultMap>
+	<select id="returnListAttach" parameterType="HashMap" resultMap="returnListAttach_Map">
+		select returnseq, returnsemester, to_char(regdate, 'yyyy-mm-dd') AS regdate, returntype, approve, orgfilename, filename
+		from tbl_return_school
+		where stdid = #{stdid}
+	</select>
+
+
+	<!-- // 파일첨부가 있는 복학내역조회 -->
+	<select id="getViewreturn" parameterType="HashMap" resultType="com.spring.lmsfinal.leejeongjun.model.Return_schoolVO">
+		select filename, orgfilename, filesize
+		from tbl_return_school
+		where returnseq = #{returnseq}
+	</select>
+
+
+	<!-- // 학생테이블에서 학생상태를 휴학신청으로 변경하기 -->
+	<update id="updateStdStateLeave" parameterType="HashMap">
+		update tbl_student set stdstateid = #{stdstateid}
+		where stdid = #{stdid}
+	</update>
+
+
+	<!-- // 로그인한 학생의 학번을 이용하여 장학내역 조회하기 -->
+	<resultMap type="HashMap" id="stdscholarship_List_Map">
+		<result property="scholarpaycode" 	column="scholarpaycode" javaType="String"/>
+		<result property="scholarcode" 		column="scholarcode" 	javaType="String"/>
+		<result property="stdid" 			column="stdid" 			javaType="String"/>
+		<result property="paysemester" 		column="paysemester" 	javaType="String"/>
+		<result property="paydate" 			column="paydate" 		javaType="String"/>
+		<result property="sortname" 		column="sortname" 		javaType="String"/>
+		<result property="scholarshipnm" 	column="scholarshipnm" 	javaType="String"/>
+		<result property="scholarshipamt" 	column="scholarshipamt" javaType="String"/>
+	</resultMap>
+	<select id="stdscholarship_List" parameterType="String" resultMap="stdscholarship_List_Map">
+		select scholarpaycode, SP.scholarcode, stdid, paysemester, to_char(paydate, 'yyyy-mm-dd') AS paydate
+		     , sortname, scholarshipnm, scholarshipamt
+		from TBL_SCHOLARSHIPPAY SP join tbl_scholarship SS
+		on SP.scholarcode = SS.scholarcode
+		where stdid = #{get_stdid}
+		order by sp.paysemester
+	</select>
+	
+
+	<insert id="testinsert" useGeneratedKeys="true" keyProperty="courseno" keyColumn="courseno" parameterType="com.spring.lmsfinal.leejeongjun.model.TestinsertVO">
+		insert into tbl_test_insert(courseno, content)
+		values(seq_test_insert.nextval, '테스트1')
+	</insert>
+
+
+	<insert id="testinsert2" useGeneratedKeys="true" keyProperty="courseno" keyColumn="courseno" parameterType="HashMap">
+		insert into tbl_test_insert(courseno, content)
+		values(seq_test_insert.nextval, '테스트1')
+	</insert>
+	
+	<!-- // 학생의 학번을 이용하여 수강테이블에서 해당학생이 이수한 학기 리스트 가져오기 -->
+	<resultMap type="HashMap" id="appsemesterList_Map">
+		<result property="appsemester" column="appsemester" javaType="String"/>
+	</resultMap>
+	<select id="appsemesterList" parameterType="String" resultMap="appsemesterList_Map">
+		select distinct(appsemester) AS appsemester
+		from tbl_course
+		where stdid = #{get_stdid}
+		order by appsemester desc
+	</select>
+	
+	
+	<!-- // 학번과 선택학기에 해당하는 성적리스트 가져오기 -->
+	<resultMap type="HashMap" id="getGradeList_Map">
+		<result property="courseno"		 	 column="courseno" 			javaType="String"/>
+		<result property="classname"	 	 column="classname" 		javaType="String"/>
+		<result property="appsemester"	 	 column="appsemester" 		javaType="String"/>
+		<result property="credit"		 	 column="credit" 			javaType="String"/>
+		<result property="courseclfc"	 	 column="courseclfc" 		javaType="String"/>
+		<result property="grade"		 	 column="grade" 			javaType="String"/>
+		<result property="evaluwhether"		 column="evaluwhether" 		javaType="String"/>
+	</resultMap>
+	<select id="getGradeList" parameterType="HashMap" resultMap="getGradeList_Map">
+		select c.courseno, s.classname, c.appsemester
+		     , s.credit, s.courseclfc, nvl(g.grade, '미입력') AS grade, c.evaluwhether
+		from tbl_course C left join tbl_grade_result G
+		on C.courseno = G.courseno
+		join tbl_subject S
+		on C.subjectid = S.subjectid
+		where stdid = #{get_stdid} and appsemester = #{latest_semester}
+	</select>
+	
+
+</mapper>

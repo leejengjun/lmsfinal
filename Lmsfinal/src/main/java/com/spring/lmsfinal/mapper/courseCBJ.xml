@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="courseCBJ"> <!-- 네임 스페이스 명은 대부분 '파일명'으로 한다!!!! -->
+	
+	<select id="deptList" resultType="String">
+		select distinct deptname 
+		from tbl_subject A join tbl_department B 
+		on A.majorid = B.majorid
+		order by deptname
+	</select>
+	
+	<select id="dayList" resultType="String">
+		select dayname
+		from tbl_dayofweek
+	</select>
+	
+	<select id="gradeList" resultType="String">
+		select distinct case 
+		            when opensemester in (1,2) then 1
+		            when opensemester in (3,4) then 2
+		            when opensemester in (5,6) then 3
+		            when opensemester in (7,8) then 4
+		        end as grade
+		from tbl_subject
+	</select>
+	
+	<select id="classList" resultType="String">
+		select classname, gyoname
+		from tbl_subject A join tbl_gyowon B on A.gyowonid = B.gyowonid
+	</select>
+	
+	<select id="creditcount" resultType="String">
+		select A.stdid, sum(B.credit) as creditsum
+		from tbl_course A
+		join tbl_subject B
+		on A.subjectid = B.subjectid 
+		join tbl_student C
+		on A.stdid = C.stdid
+		where 1=1
+		<if test="stdid != null">
+		and stdid = #{stdid}
+		</if>
+		group by A.stdid
+	</select>
+	
+	<resultMap type="HashMap" id="subjectMap">
+		<result property="stdid" 		column="stdid"	 		javaType="String"/>
+		<result property="subjectid" 	column="subjectid" 		javaType="String"/>
+		<result property="deptname" 	column="deptname" 		javaType="String"/>		
+		<result property="classname"	column="classname" 		javaType="String"/>
+		<result property="grade" 		column="grade" 			javaType="String"/>
+		<result property="totalperson" 	column="totalperson" 	javaType="String"/>
+		<result property="remaingseat" 	column="remaingseat" 	javaType="String"/>
+		<result property="gyoname" 		column="gyoname" 		javaType="String"/>
+		<result property="credit" 		column="credit" 		javaType="String"/>
+		<result property="dayname" 		column="dayname" 		javaType="String"/>		
+		<result property="lctrid" 		column="lctrid" 		javaType="String"/>
+		<result property="buildname" 	column="buildname" 		javaType="String"/>
+		<result property="applystate" 	column="applystate" 	javaType="String"/>
+		<result property="majorid" 		column="majorid" 		javaType="String"/>
+		<result property="gyowonid" 	column="gyowonid" 		javaType="String"/>
+		<result property="courseno" 	column="courseno" 		javaType="String"/>
+		<result property="periodid" 	column="periodid" 		javaType="String"/>
+		<result property="periodid1" 	column="periodid1" 		javaType="String"/>
+		<result property="periodid2" 	column="periodid2" 		javaType="String"/>
+		<result property="periodid3" 	column="periodid3" 		javaType="String"/>		
+		<result property="dayid" 		column="dayid" 			javaType="String"/>
+	</resultMap>
+
+	<select id="subjectList" parameterType="HashMap" resultMap="subjectMap">
+	select subjectid, deptname, classname, grade, totalperson, remaingseat, gyoname,  
+	           credit, dayname, lctrid, buildname, majorid, gyowonid, periodid1, periodid2, periodid3, dayid
+	from
+	(
+	    select rownum as rno, subjectid, deptname, classname, grade, totalperson, remaingseat, gyoname,  
+	           credit, dayname, lctrid, buildname, majorid, gyowonid, periodid1, periodid2, periodid3, dayid
+	    from
+	    (
+	        select distinct subjectid, deptname, classname, grade, totalperson, remaingseat, gyoname,  
+	               credit, dayname, lctrid, buildname, majorid, gyowonid, periodid1, periodid2, periodid3, dayid
+	        from
+	        (select A.subjectid, E.deptname, A.classname, 
+	                case 
+	                    when A.opensemester in (1,2) then 1
+	                    when A.opensemester in (3,4) then 2
+	                    when A.opensemester in (5,6) then 3
+	                    when A.opensemester in (7,8) then 4
+	                end as grade,
+	                case
+	                    when A.opensemester in (1,3,5,7) then 1
+	                    when A.opensemester in (2,4,6,8) then 2
+	                end as semester,
+	                A.credit, (A.totalperson - A.applyperson) as remaingseat, G.gyoname,
+	                A.totalperson, B.periodid, C.lctrid, D.buildname, F.dayname,
+	                A.majorid, A.gyowonid, H.periodid1, H.periodid2, H.periodid3, B.dayid
+	        from 
+	        (
+	        select subjectid, majorid, gyowonid, classname, credit, opensemester
+	             , applyperson, totalperson, applystate
+	        from tbl_subject
+	        )A
+	        join 
+	        ( 
+	        select periodid, dayid, subjectid, seq_lctrid 
+	        from tbl_lectureroom_assign 
+	        ) B
+	        on A.subjectid = B.subjectid
+	        join 
+	        (
+	        select seq_lctrid, lctrid, buildno
+	        from tbl_lectureroom
+	        ) C
+	        on B.seq_lctrid = C.seq_lctrid
+	        join tbl_building D
+	        on C.buildno = D.buildno
+	        join tbl_department E
+	        on A.majorid = E.majorid
+	        join tbl_dayofweek F
+	        on B.dayid = F.dayid
+	        join tbl_gyowon G
+	        on A.gyowonid = G.gyowonid
+	        join
+	        (
+	            select subjectid, dayid,
+	                   max(decode(rid, 1, periodid)) periodid1,
+	                   max(decode(rid, 2, periodid)) periodid2,
+	                   max(decode(rid, 3, periodid)) periodid3
+	            from
+	            (
+	                select subjectid, dayid,
+	                       row_number() over(partition by subjectid order by periodid) rid,
+	                       periodid
+	                from 
+	                (
+	                    select subjectid, classname, periodid, dayid from
+	                    (
+	                        select A.subjectid, A.classname, B.periodid, B.dayid
+	                        from tbl_subject A
+	                        join tbl_lectureroom_assign B
+	                        on A.subjectid = B.subjectid
+	                        where A.applystate = '등록완료'
+	                        order by A.subjectid, B.periodid
+	                    )
+	                )
+	            )
+            	group by subjectid, dayid
+        	) H
+	        on A.subjectid = H.subjectid
+	        where A.applystate = '등록완료'
+	        order by subjectid)
+			where semester = case 
+                    when ((<![CDATA[select extract(month from sysdate) from dual) < 7]]> ) then 1
+                    else 2
+                   end
+                   )
+                   order by subjectid
+			)
+			where rno between #{startRno} and #{endRno} 
+		<if test="deptname != null">
+			and deptname = #{deptname}
+		</if>
+		<if test="dayname != null">
+			and dayname = #{dayname}
+		</if>
+		<if test="grade != null">
+			and grade = #{grade}
+		</if>
+		<if test="classname != null">
+			and classname like '%' || #{classname} || '%'
+		</if>
+		<if test="gyoname != null">
+			and gyoname like '%' || #{gyoname} || '%'
+		</if>
+		
+	</select>
+
+	<insert id="course_submit" useGeneratedKeys="true" keyProperty="course_no" keyColumn="courseno" parameterType="HashMap">
+		insert into tbl_course(courseno, stdid, appsemester, evaluwhether, subjectid, majorid, gyowonid)
+		values(seq_courseno.nextval, #{stdid}, #{completesemester}, default, #{subjectid}, #{majorid}, #{gyowonid}) 
+	</insert>
+
+	<select id="courseList" parameterType="HashMap" resultMap="subjectMap">
+		select distinct subjectid, deptname, classname, grade, totalperson, remaingseat, gyoname,  
+		       credit, dayname, lctrid, buildname, majorid, gyowonid, periodid1, periodid2, periodid3, courseno, dayid
+		from
+		(
+		    select C.subjectid, B.deptname, C.classname,
+		        case 
+		            when C.opensemester in (1,2) then 1
+		            when C.opensemester in (3,4) then 2
+		            when C.opensemester in (5,6) then 3
+		            when C.opensemester in (7,8) then 4
+		        end as grade,
+		        case
+		            when C.opensemester in (1,3,5,7) then 1
+		            when C.opensemester in (2,4,6,8) then 2
+		        end as semester,
+		        C.credit, (C.totalperson - C.applyperson) as remaingseat, D.gyoname,
+		        C.totalperson, E.periodid, G.lctrid, H.buildname, F.dayname,
+		        C.majorid, C.gyowonid, I.periodid1, I.periodid2, I.periodid3, A.courseno, E.dayid
+		    from tbl_course A join tbl_department B
+		    on A.majorid = B.majorid
+		    join tbl_subject C
+		    on A.subjectid = C.subjectid
+		    join tbl_gyowon D
+		    on C.gyowonid = D.gyowonid
+		    join tbl_lectureroom_assign E
+		    on C.subjectid = E.subjectid
+		    join tbl_dayofweek F
+		    on E.dayid = F.dayid
+		    join tbl_lectureroom G
+		    on E.seq_lctrid = G.seq_lctrid
+		    join tbl_building H
+		    on G.buildno = H.buildno
+		    join
+		    (
+		        select subjectid, dayid,
+		               max(decode(rid, 1, periodid)) periodid1,
+		               max(decode(rid, 2, periodid)) periodid2,
+		               max(decode(rid, 3, periodid)) periodid3
+		        from
+		        (
+		            select subjectid, dayid,
+		                   row_number() over(partition by subjectid order by periodid) rid,
+		                   periodid
+		            from 
+		            (
+		                select subjectid, classname, periodid, dayid from
+		                (
+		                    select A.subjectid, A.classname, B.periodid, B.dayid
+		                    from tbl_subject A
+		                    join tbl_lectureroom_assign B
+		                    on A.subjectid = B.subjectid
+		                    where A.applystate = '등록완료'
+		                    order by A.subjectid, B.periodid
+		                )
+		            )
+		        )
+		        group by subjectid, dayid
+		    ) I
+	    on C.subjectid = I.subjectid
+	    where A.evaluwhether=0
+		<if test="stdid != null">
+		and stdid = #{stdid}
+		</if>
+		)
+		order by courseno desc
+	</select>
+	
+	<delete id="course_delete" parameterType="HashMap">
+		delete from tbl_course where courseno = #{courseno}
+	</delete>
+	
+	
+	<update id="applyperson_plus" parameterType="HashMap">
+		update tbl_subject set applyperson = applyperson + 1 where subjectid = #{subjectid}
+	</update>
+	
+	
+	<update id="applyperson_minus" parameterType="HashMap">
+		update tbl_subject set applyperson = applyperson - 1 where subjectid = #{subjectid}
+	</update>
+	
+
+	<!-- === 총 게시물 건수(totalCount) 구하기 === -->
+    <select id="getTotalCount" parameterType="HashMap" resultType="int">
+    	select count(*)
+      from
+      (
+          select distinct subjectid
+          from
+          (select A.subjectid, 
+                  case
+                      when A.opensemester in (1,3,5,7) then 1
+                      when A.opensemester in (2,4,6,8) then 2
+                  end as semester
+          from 
+          (
+          select subjectid, opensemester
+               , applystate
+          from tbl_subject
+          )A
+          where A.applystate = '등록완료'
+          )
+          where semester = case 
+                              when ((<![CDATA[select extract(month from sysdate) from dual) < 7]]> ) then 1
+                              else 2
+                             end 
+           )
+    </select>
+    
+    <insert id="insertevalue" parameterType="HashMap">
+    	insert into tbl_lecture_evalucomplete(evalucode, courseno)
+		values (seq_evalucode.nextval, #{course_no})
+    </insert>
+</mapper>
