@@ -8,13 +8,21 @@
 	<!-- Root Context: defines shared resources visible to all other web components -->
 		
 	<!-- ==== #15. myBatis(JDBC)설정 연결문자열 설정하기  ==== -->
+	<!-- logback을 위해 주석 처리 
     <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
        <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
-       <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe" /> <!-- @localhost 나중에 파이널 할때 여기에 학원 아이피 넣어주면 됨. -->
-       <property name="username" value="finalorauser3" />
+       <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe" />--> <!-- @localhost 나중에 파이널 할때 여기에 학원 아이피 넣어주면 됨. --> 	 
+   <!--    <property name="username" value="finalorauser3" />
        <property name="password" value="cclass" />
     </bean> 
-		
+-->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	    <property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"/>
+	    <property name="url" value="jdbc:log4jdbc:oracle:thin:@localhost:1521:xe"/>
+	    <property name="username" value="finalorauser3"/>
+	    <property name="password" value="cclass"/>
+	</bean>
+
 		
 	<!-- ==== #15. myBatis(JDBC)설정 mapper 파일 위치 지정하기  ==== -->
     <!-- mapper 파일이란 sql 문을 가지고 있는 xml 파일을 말한다. -->
