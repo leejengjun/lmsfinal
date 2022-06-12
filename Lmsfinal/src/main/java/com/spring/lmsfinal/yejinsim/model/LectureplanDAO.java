@@ -83,7 +83,8 @@ public class LectureplanDAO implements InterLectureplanDAO {
 	// 주차별 강의계획서 수정하기
 	@Override
 	public int editlctrplandetail(Map<String, Object> paraMap) {
-		int n = sqlsession.update("yejinsim.editlctrplan", paraMap);
+		int n = sqlsession.update("yejinsim.editlctrplandetail", paraMap);
 		return n;
 	}
+	
 }

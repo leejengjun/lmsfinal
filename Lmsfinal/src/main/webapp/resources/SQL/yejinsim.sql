@@ -1,8 +1,11 @@
 SHOW USER;
 
-
+SELECT * FROM v$version;
 SELECT *
 FROM TAB;
+
+select *
+from tbl_lectureplan_detail
 
 select *
 from tbl_gyowon;
@@ -216,3 +219,62 @@ where gyowonid = 10001
 order by subjectid desc
 
 
+
+
+<!-- == 주차별 강의계획서 수정하기 ==  -->
+
+MERGE INTO tbl_lectureplan_detail R
+USING (
+SELECT
+'62' as seq_lectureplan,
+'1' as lectureweek,
+'12014' as subjectid,
+'12' as majorid,
+'10001' as gyowonid,
+'연습1' as lptopic,
+'연습1' as lpteaching,
+'연습1' as lpmaterial,
+'연습1' as lphomewk
+FROM DUAL
+) T
+ON (R.LECTUREWEEK = T.lectureweek
+AND R.SUBJECTID = T.subjectid)
+WHEN MATCHED THEN
+UPDATE SET
+R.SEQ_LECTUREPLAN = T.seq_lectureplan,
+R.MAJORID = T.majorid,
+R.GYOWONID = T.gyowonid,
+R.LPTOPIC = T.lptopic,
+R.LPTEACHING = T.lpteaching,
+R.LPMATERIAL = T.lpmaterial,
+R.LPHOMEWK = T.lphomewk
+WHEN NOT MATCHED THEN
+INSERT (
+SEQ_LECTUREPLAN,
+LECTUREWEEK,
+SUBJECTID,
+MAJORID,
+GYOWONID,
+LPTOPIC,
+LPTEACHING,
+LPMATERIAL,
+LPHOMEWK
+)
+VALUES (
+T.seq_lectureplan,
+T.lectureweek,
+T.subjectid,
+T.majorid,
+T.gyowonid,
+T.lptopic,
+T.lpteaching,
+T.lpmaterial,
+T.lphomewk
+)
+
+commit
+
+
+select *
+from tbl_lectureplan_detail
+where seq_lectureplan = 62

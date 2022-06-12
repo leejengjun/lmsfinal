@@ -488,7 +488,7 @@
 		where A.subjectid = #{subjectid}
 	</select>
 	
-	<!-- 강의계획서 수정하기 -->
+	<!-- == 강의계획서 수정하기 == -->
 	<update id="editlctrplan" parameterType="com.spring.lmsfinal.yejinsim.model.LectureplanVO">
 		update tbl_lectureplan set lpsummary = #{lpsummary,jdbcType=VARCHAR}
 								, lpobject = #{lpobject,jdbcType=VARCHAR}
@@ -534,7 +534,7 @@
 		where subjectid in ${subjectid}      
 	</update>
 	
-	<!-- 학과코드 가져오기 -->
+	<!-- == 학과코드 가져오기 == -->
 	<select id="getmajorid" parameterType="String" resultType="String">
 		select majorid
 		from tbl_lectureplan
@@ -542,7 +542,7 @@
 	</select>
 	
 	
-	<!-- 강의계획서 번호 가져오기 -->
+	<!-- == 강의계획서 번호 가져오기 == -->
 	<select id="getSeq_lectureplan" parameterType="String" resultType="String">
 		select seq_lectureplan
 		from tbl_lectureplan
@@ -559,35 +559,35 @@
 	</select>
 	
 	
-	<!-- 강의신청 절차끝나고 강의신청상태 변경해주기 -->
+	<!-- == 강의신청 절차끝나고 강의신청상태 변경해주기 == -->
 	<update id="changeapplystate" parameterType="String">
         update tbl_subject set applystate = '승인대기중'            
         where  subjectid = #{subjectid,jdbcType=NUMERIC}
     </update>
 	
-	<!-- === 주차별 강의계획서 쓰기 === -->
+	<!-- === 주차별 강의계획서 입력하기 === -->
 	<update id="addlctrplandetail" parameterType="java.util.HashMap">
 	     <foreach collection="resendList" item="item" index="index" separator=" " open="INSERT ALL " close="SELECT * FROM DUAL">
 			into tbl_lectureplan_detail(seq_lectureplan, lectureweek, subjectid, majorid, gyowonid, lptopic, lpteaching, lpmaterial, lphomewk
 			) values(
-	        #{item.seq_lectureplan,jdbcType=INTEGER}, #{item.lectureweek,jdbcType=INTEGER}, #{item.subjectid,jdbcType=INTEGER}
-	        , #{item.majorid,jdbcType=INTEGER}, #{item.gyowonid,jdbcType=INTEGER}, #{item.lptopic,jdbcType=VARCHAR}
+	        #{item.seq_lectureplan,jdbcType=VARCHAR}, #{item.lectureweek,jdbcType=VARCHAR}, #{item.subjectid,jdbcType=VARCHAR}
+	        , #{item.majorid,jdbcType=VARCHAR}, #{item.gyowonid,jdbcType=VARCHAR}, #{item.lptopic,jdbcType=VARCHAR}
 	        , #{item.lpteaching,jdbcType=VARCHAR}, #{item.lpmaterial,jdbcType=VARCHAR}, #{item.lphomewk,jdbcType=VARCHAR}
 	        )
 	      </foreach>
 	</update>
 	
-	<!-- 주차별 강의계획서 수정하기 -->
-    <insert id="editlctrplandetail" parameterType="java.util.HashMap">
+	<!-- == 주차별 강의계획서 수정하기 ==  -->
+    <update id="editlctrplandetail" parameterType="java.util.HashMap">
        MERGE INTO tbl_lectureplan_detail R
        USING (
-           <foreach collection="resendList" item="item" open="" close="" index="index" separator="UNION">
+           <foreach collection="editdetailList" item="item" index="index" separator="UNION ALL" open="(" close=")">
                SELECT
-            #{item.seq_lectureplan,jdbcType=INTEGER} as seq_lectureplan, 
-            #{item.lectureweek,jdbcType=INTEGER} as lectureweek, 
-            #{item.subjectid,jdbcType=INTEGER} as subjectid, 
-            #{item.majorid,jdbcType=INTEGER} as majorid, 
-            #{item.gyowonid,jdbcType=INTEGER} as gyowonid, 
+            #{item.seq_lectureplan,jdbcType=VARCHAR} as seq_lectureplan, 
+            #{item.lectureweek,jdbcType=VARCHAR} as lectureweek, 
+            #{item.subjectid,jdbcType=VARCHAR} as subjectid, 
+            #{item.majorid,jdbcType=VARCHAR} as majorid, 
+            #{item.gyowonid,jdbcType=VARCHAR} as gyowonid, 
             #{item.lptopic,jdbcType=VARCHAR} as lptopic, 
             #{item.lpteaching,jdbcType=VARCHAR} as lpteaching, 
             #{item.lpmaterial,jdbcType=VARCHAR} as lpmaterial, 
@@ -598,7 +598,7 @@
        ON (R.LECTUREWEEK = T.lectureweek 
       AND R.SUBJECTID = T.subjectid)
        WHEN MATCHED THEN
-       UPDATE SET
+       UPDATE set
                R.SEQ_LECTUREPLAN = T.seq_lectureplan,
           <!-- R.LECTUREWEEK = T.lectureweek, --> 
           <!-- R.SUBJECTID = T.subjectid, --> 
@@ -610,17 +610,17 @@
                R.LPHOMEWK = T.lphomewk
        WHEN NOT MATCHED THEN
        INSERT (
-           SEQ_LECTUREPLAN,
-           LECTUREWEEK,
-           SUBJECTID,
-           MAJORID,
-           GYOWONID,
-           LPTOPIC,
-           LPTEACHING,
-           LPMATERIAL,
-           LPHOMEWK 
+           R.SEQ_LECTUREPLAN,
+           R.LECTUREWEEK,
+           R.SUBJECTID,
+           R.MAJORID,
+           R.GYOWONID,
+           R.LPTOPIC,
+           R.LPTEACHING,
+           R.LPMATERIAL,
+           R.LPHOMEWK 
        )
-       VALUES (
+            VALUES (
            T.seq_lectureplan,
            T.lectureweek,
            T.subjectid,
@@ -631,7 +631,7 @@
            T.lpmaterial,
            T.lphomewk
        )
-   </insert>
+   </update>
    
    
 	<!-- == 교수로 로그인했을 때 강의실 홈페이지 접근했을 때  강의정보 가져오기 == -->
