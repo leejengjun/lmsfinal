@@ -12,6 +12,12 @@ public interface InterStudentService {
 //학생회원 등록
 	int stdRegisterEnd(Map<String, String> paraMap);
 	
+// 학생 등록시 학과관련리스트 
+	List<StudentVO> stdDeptlistSearch(Map<String, String> paraMap);
+
+// 학생 등록시 교원 관련리스트 
+	List<StudentVO> stdGyowonlistSearch(Map<String, String> paraMap);
+	
 // 학번 중복검사
 	int stdidDuplicateCheck(String stdid);
 
@@ -55,6 +61,13 @@ public interface InterStudentService {
 
 // 상태변경_복학거절_apr	
 	void stuReturnAprDelete(String stdid);
+
+	
+
+	
+
+
+	
 
 
 

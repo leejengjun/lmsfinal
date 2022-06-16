@@ -13,6 +13,7 @@
 		 background-color: #00001a; 
 		 color: white;
 		 border: 2px solid #00001a; 
+		 
 		
 	}
 
@@ -112,11 +113,12 @@
 		     	
 		   });	// end of $("input.btn_approve").click(function()----------------------------
   
+				   
 //개설강의 신청상태 변경_반려  
 		   $("input.btn_reject").click(function(){
 				
 				 const idx = $("input.btn_reject").index($(this));
-				 alert(idx);
+				alert(idx);
 				 const subject = $("td#subjectid").eq(idx).text();
 				 alert("확인용 subject=>" + subject);
 				 const applystate = $("p#applystate").eq(idx).text();
@@ -155,21 +157,21 @@
  
 
  
-
+ 
 </script>   
 
 <div style="display: flex;">
 <div style="margin: auto; padding-left: 3%;">
 
 <div>
-<h2 style="margin: 100px; text-align: center; font-weight:bolder;">교수강의 개설 조회</h2>
+<h2 style="margin: 80px; text-align: center; font-weight:bolder;">교수강의 개설 조회</h2>
 
  
  <form name="gyoOpenedListFrm"> 
      	<select name="searchType_1" id="searchType_1" style="height: 26px; margin: 0 0 20px 100px; ">
 			<option value="">검색대상</option>
 			<option value="deptname">학과</option>
-			<option value="subjectid">강의코드</option>
+			<option value="opensemester">개설학기</option>
 			<option value="classname">강의명</option>
 		</select>
 	
@@ -181,6 +183,7 @@
 			<option>등록완료</option>
 			<option>승인대기중</option>
 			<option>신청반려</option>
+			
 		</select>
 		
 		<button type="submit" class="btn btn-secondary btn-sm" onclick="goSearch()">조회</button>
@@ -195,7 +198,7 @@
 			<th style="width: 100px;  text-align: center;">학과</th>
 			<th style="width: 70px;  text-align: center;">강의코드</th>
 	        <th style="width: 160px; text-align: center;">강의명</th>
-	        <th style="width: 70px;  text-align: center;">대상학년</th>
+	        <th style="width: 70px;  text-align: center;">개설학기</th>
 	        <th style="width: 70px;  text-align: center;">이수학점</th>
 	        <th style="width: 70px;  text-align: center;">정원</th>
 	        <th style="width: 80px;  text-align: center;">강의실</th>
@@ -224,16 +227,29 @@
 				
 				
 					<td id="applystate" align="center"><p id="applystate">${gyoOpenedList.applystate}</p>
+					  
 					  <c:choose>
-					   <c:when  test="${gyoOpenedList.applystate != '등록완료' && gyoOpenedList.applystate != '신청반려'}">
+			
+				         <c:when  test="${gyoOpenedList.applystate == '승인대기중' }"> 
 						   <input type="button" id="approve" name="approve" class="btn btn-outline-dark btn-sm mr-3 btn_approve" value="승인"/>
 						   <input type="button" id="reject" name="reject" class="btn btn-outline-dark btn-sm mr-3 btn_reject" value="반려"/>
-				       </c:when >
-				   
+				         </c:when >
+				         
+				         <c:when  test="${gyoOpenedList.applystate == '신청서미비'}">   
+						   <input type="hidden" id="approve" name="approve" class="btn btn-outline-dark btn-sm mr-3 btn_approve" value="승인"/>
+						   <input type="button" id="reject" name="reject" class="btn btn-outline-dark btn-sm mr-3 btn_reject" value="반려"/>
+				         </c:when >
+				         
+				         <c:when  test="${gyoOpenedList.applystate == '0' }">[신청서 누락]    
+						   <input type="hidden" id="approve" name="approve" class="btn btn-outline-dark btn-sm mr-3 btn_approve" value="승인"/>
+						   <input type="button" id="reject" name="reject" class="btn btn-outline-dark btn-sm mr-3 btn_reject" value="반려"/>
+				         </c:when >
+				         
 				       <c:otherwise>
 						   <input type="hidden" id="approve" name="approve" class="btn btn-outline-dark btn-sm mr-3 btn_approve" value="승인"/>
 						   <input type="hidden" id="reject" name="reject" class="btn btn-outline-dark btn-sm mr-3 btn_reject" value="반려"/>
 				       </c:otherwise >
+				       
 				      </c:choose>    
 					</td>
 					
@@ -249,7 +265,7 @@
 	</tbody>
   </table>
 	
-     <div align="center" style="border: solid 0px gray; width: 70%; margin: 20px auto; ">
+     <div align="center" style="border: solid 0px gray; width: 70%; margin: auto ">
         ${requestScope.pageBar}
      </div>
     

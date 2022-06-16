@@ -17,6 +17,13 @@ public class GyowonDAO implements InterGyowonDAO {
 	@Resource
 	private SqlSessionTemplate sqlsession;
 
+//학과 찾기
+	@Override
+	public List<GyowonVO> gyoDeptlistSearch(Map<String, String> paraMap) {
+		List<GyowonVO> gyoDeptlist = sqlsession.selectList("wonhyejin.gyoDeptlistSearch",paraMap);
+		return gyoDeptlist;
+	}
+	
 //교원회원등록
 	@Override
 	public int gyowonRegisterEnd(Map<String, String> paraMap) {
@@ -88,6 +95,8 @@ public class GyowonDAO implements InterGyowonDAO {
 		List<MylectureVO> gyoOpenedList = sqlsession.selectList("wonhyejin.selectPagingGyowonOpen", paraMap);
 		return gyoOpenedList;
 	}
+
+
 
 	
 

@@ -8,6 +8,14 @@ public interface InterStudentDAO {
 //학생회원등록
 	int stdRegisterEnd(Map<String, String> paraMap);
 	
+//학생회원 등록시 학과 관련 리스트 
+	List<StudentVO> stdDeptlistSearch(Map<String, String> paraMap);
+
+//	학생회원 등록시 교원 관련 리스트 
+	List<StudentVO> stdGyowonlistSearch(Map<String, String> paraMap);
+	
+	
+	
 // 학번중복 검사 
 	int stdidDuplicateCheck(String stdid);
 
@@ -54,7 +62,8 @@ public interface InterStudentDAO {
 // 상태변경_복학거절_apr
 	void stuReturnAprDelete(String stdid);
 
-	
+
+
 	
 	
 }

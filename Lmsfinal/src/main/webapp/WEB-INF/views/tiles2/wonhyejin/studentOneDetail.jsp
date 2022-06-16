@@ -50,27 +50,6 @@ $(document).ready(function(){
 	}
 	
 	
-// 학적상태 변경
-	  $("button#stdstateidChange").click(function(){
-       	
-          $.ajax({
-       		url:"<%= ctxPath%>/stdstateidChange.lmsfinal",
-       		data:{"stdid":$(this).next().val()
-       			  ,"stdstateid":$("select#stdstateid").val()}, 
-       		type:"post",  
-       		dataType:"JSON",
-       	 	success:function(json){
-       	 		if(json.n > 0) {
-                     alert("변경되었습니다");
-       	 	}
-			 
-     	   }, 
-     	   error:function(request, status, error){
-     		   alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
-     	   }
-         }); 		
-	  });	// end of  $("button#stdstateidChange").click(function()
-   
 	});	
 
 

@@ -22,6 +22,21 @@ public class StudentDAO implements InterStudentDAO {
 		return n;
 	}
 
+//학생회원 등록시 학과 관련 리스트 
+	@Override
+	public List<StudentVO> stdDeptlistSearch(Map<String, String> paraMap) {
+		List<StudentVO> stdDeptlist = sqlsession.selectList("wonhyejin.stdDeptlistSearch",paraMap);
+		return stdDeptlist;
+	}
+
+//학생회원 등록시 교원 관련 리스트 
+	@Override
+	public List<StudentVO> stdGyowonlistSearch(Map<String, String> paraMap) {
+		List<StudentVO> stdGyowonlist = sqlsession.selectList("wonhyejin.stdGyowonlistSearch",paraMap);
+		return stdGyowonlist;
+	}
+
+	
 // 학번중복 검사 
 	@Override
 	public int stdidDuplicateCheck(String stdid) {
@@ -122,6 +137,8 @@ public class StudentDAO implements InterStudentDAO {
 		sqlsession.update("wonhyejin.stuReturnAprDelete", stdid);
 		
 	}
+
+
 
 	
 }

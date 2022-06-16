@@ -7,6 +7,9 @@ import com.spring.lmsfinal.yejinsim.model.MylectureVO;
 
 public interface InterGyowonDAO {
 
+// 학과찾기
+	List<GyowonVO> gyoDeptlistSearch(Map<String, String> paraMap);
+	
 //교원회원등록
 	int gyowonRegisterEnd(Map<String, String> paraMap);
 	
@@ -14,9 +17,9 @@ public interface InterGyowonDAO {
 	int gyowonIdDuplicateCheck(String gyowonid);
 
 //이메일 중복 확인 
-		int gyoemailDuplicateCheck(String gyoemail);
+	int gyoemailDuplicateCheck(String gyoemail);
  
-	//교수강의 개설 승인(업데이트 신청상태변경_승인)
+//교수강의 개설 승인(업데이트 신청상태변경_승인)
 	int gyoOpenedUpdate(Map<String, String> paraMap);
 	
  //교수강의 개설 승인(업데이트 신청상태변경_삭제)
@@ -36,4 +39,6 @@ public interface InterGyowonDAO {
 	
 //교수강의 개설 승인	 (페이징처리함)
 	List<MylectureVO> selectPagingGyowonOpen(Map<String, String> paraMap);
+
+	
 }

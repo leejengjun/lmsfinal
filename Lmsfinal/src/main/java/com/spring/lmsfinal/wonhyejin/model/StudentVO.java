@@ -32,7 +32,9 @@ public class StudentVO {
 	
 	
 	////////
-	String deptname;
+	private String deptname;
+	private String majorid;
+	private String gyoname;
 	
 	
 	
@@ -200,6 +202,17 @@ public class StudentVO {
 	public void setDeptname(String deptname) {
 		this.deptname = deptname;
 	}
-
+	public String getMajorid() {
+		return majorid;
+	}
+	public void setMajorid(String majorid) {
+		this.majorid = majorid;
+	}
+	public String getGyoname() {
+		return gyoname;
+	}
+	public void setGyoname(String gyoname) {
+		this.gyoname = gyoname;
+	}
 }
 

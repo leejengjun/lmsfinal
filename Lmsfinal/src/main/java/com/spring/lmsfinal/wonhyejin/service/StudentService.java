@@ -14,6 +14,7 @@ import com.spring.lmsfinal.wonhyejin.model.StudentVO;
 
 
 
+
 @Service
 public class StudentService implements InterStudentService {
 	
@@ -29,6 +30,21 @@ public class StudentService implements InterStudentService {
 		int n = dao.stdRegisterEnd(paraMap);
 		return n;
 	}
+	
+//학생회원 등록시 학과 관련 리스트 
+	@Override
+	public List<StudentVO> stdDeptlistSearch(Map<String, String> paraMap) {
+		List<StudentVO> stdDeptlist = dao.stdDeptlistSearch(paraMap);
+		return stdDeptlist;
+	}
+	
+//학생회원 등록시 교원 관련 리스트 	
+	@Override
+	public List<StudentVO> stdGyowonlistSearch(Map<String, String> paraMap) {
+		List<StudentVO> stdGyowonlist = dao.stdGyowonlistSearch(paraMap);
+		return stdGyowonlist;
+	}
+	
 	
 //학번 중복 확인 
 	@Override
@@ -127,6 +143,12 @@ public class StudentService implements InterStudentService {
 		dao.stuReturnAprDelete(stdid);
 	
 	}
+
+
+
+	
+
+	
 
 	
 }

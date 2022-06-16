@@ -41,18 +41,23 @@
 	 
 	 .memberbox form{
 	    margin:60px;
-	    width: 100%; height: 800px;
+	    width: 100%; height: 930px;
 	    background-color: #fff;
 	    border: 3px solid #000033;
 	    padding: 20px; 
 	    width: 800px;
 	    box-sizing: border-box;
 	     border-radius: 40px;
+	 
 	}
 	
 	table#tblstudentRegister input {
 	  border-radius: 5px;
 	}
+	
+
+	
+        
    </style>
 
    <script type="text/javascript">
@@ -150,7 +155,7 @@
       		  
       		  const $target = $(event.target);
       	 
-  	          const regExp = new RegExp(/^(?:[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[1,2][0-9]|3[0,1]))-[1-4][0-9]{6}$/);  
+  	          const regExp = new RegExp(/[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[1,2][0-9]|3[0,1])/);  
   	       
       		  const bool = regExp.test($target.val());       
 	      	 
@@ -235,7 +240,7 @@
       	   $("input#stdmobile").blur(function(){
       		  
       		 const $target = $(event.target);
-  	         const regExp = new RegExp( /^\d{3}-\d{3,4}-\d{4}$/); 
+  	         const regExp = new RegExp(/^01[0-1, 7][0-9]{7,8}$/); 
   	   
       	 	 const bool = regExp.test($target.val());      
       	 
@@ -260,16 +265,62 @@
 
 ////### 학과코드  ###////
 
-    	 $('#selectStdmajorid').change(function() {
-            if ($('#selectStdmajorid').val() == 'directly') {
-                $('#stdmajorid').attr("disabled", false);
-                $('#stdmajorid').val("");
-                $('#stdmajorid').focus();
-            } else {
-                $('#stdmajorid').val($('#selectStdmajorid').val());
-            }
-        });
 
+	  $("input#stdmajorid").click(function(){
+		  $('#deptSearch').modal('show');  // 모달창 보여주기	
+	  });
+	  
+	  // === 학과찾기
+      $("input#searchWord").keyup(function(event){
+  		if(event.keyCode == 13){
+  			// 엔터를 했을 경우
+  			goDpSearch();
+  		}
+  	  });
+       
+	  
+      // === 검색 결과에 따라 학과 코드 넣어주기
+  	 
+  	 $(document).on("click", "div.sResult", function(){	  
+  		 
+  		  const stdmajorid = $(this).find("span#stdmajorid").text();
+  		  
+  	   	  $("input#stdmajorid").val(stdmajorid);
+   		  $('#deptSearch').modal('hide');
+
+  	});
+
+
+
+   		  
+////### 교원번호   ###////
+
+
+ 	  $("input#gyowonid").click(function(){
+ 		  $('#gyowonSearch').modal('show');   // 모달창 보여주기	    
+ 	  });
+ 		  
+ 		  
+ 	 // === 학과찾기
+       $("input#searchWord_1").keyup(function(event){
+   		if(event.keyCode == 13){
+   			// 엔터를 했을 경우
+   			goGySearch();
+   		}
+   	  });
+        
+ 	  
+    // === 검색 결과에 따라 교원번호 넣어주기
+   	 
+   	 $(document).on("click", "div.gResult", function(){	  
+   		
+   		  const gyowonid = $(this).find("span#gyowonid").text();
+   	   	  $("input#gyowonid").val(gyowonid); 
+    	  $('#gyowonSearch').modal('hide');
+
+   	});
+
+   
 
 ////### 입학전형  ###////
 
@@ -282,6 +333,7 @@
                  $('#enttype').val($('#selectEnttype').val());
              }
          });
+
 
 ////### 입학구분  ###////
 
@@ -375,8 +427,76 @@
                 }	
     	    });	
     	 };	
-    
     	 
+    	 
+ /////// 학과 찾기 ////////    	 
+    	  function goDpSearch(){
+    		  	 $.ajax({
+    				  url:"<%= ctxPath%>/stdDeptlist.lmsfinal",
+    				  data:{"searchType":$("select#searchType").val()
+    					  	, "searchWord":$("input#searchWord").val()},  	
+    				  dataType:"JSON",
+    				  success:function(json){ 
+    					  
+    					  let html = "";
+    					  if(json.length > 0) {
+    						  $.each(json, function(index, item){
+    							  html += "<div class='sResult' id='index' style='cursor:pointer;'>";
+    							  html += "<span id='stdmajorid' style='color:#3333ff'>"+item.majorid+"</span>&nbsp;";
+    							  html += "<span id='deptname'>"+item.deptname+"</span>";
+    							  html += "</div>";
+    						  });
+    					  }
+    					  else {
+    						 alert("해당하는 학과가 없습니다. 다시 입력하세요.");
+    					  }
+    					  
+    					  $("div#div_searchResult").html(html);
+    				  },
+    				  error: function(request, status, error){
+    						alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
+    				  }
+    			  });
+    		  }// end of function goDpSearch(){}-----------------
+    		  
+    		  
+    		  
+    
+ /////// 교원찾기 ////////
+ 
+   function goGySearch(){
+    		  	 $.ajax({
+    				  url:"<%= ctxPath%>/stdGyowonlist.lmsfinal",
+    				  data:{"searchType_1":$("select#searchType_1").val()
+    					  	, "searchWord_1":$("input#searchWord_1").val()},  	
+    				  dataType:"JSON",
+    				  success:function(json){ 
+    					  
+    					  let html = ""; 
+    					  if(json.length > 0) {
+    						  $.each(json, function(index, item){
+    							  html += "<div class='gResult' id='index' style='cursor:pointer;'>"
+    								  html += "<span id='majorid' style='color:#3333ff'>"+item.majorid+"</span>&nbsp;"
+    								  html += "<span id='deptname'>"+item.deptname+"</span>&nbsp;"
+    								  html += "<span id='gyowonid' style='color:#3333ff'>"+item.gyowonid+"</span>&nbsp;"
+    								  html += "<span id='gyoname'>"+item.gyoname+"</span>";
+    								  html += "</div>";
+    						  });
+    					  }
+    					  else {
+    						  alert("해당하는 교원이 없습니다. 다시 입력하세요.");
+    					  }// end of else ---------------------
+    					  
+    					  $("div#div_GySearchResult").html(html);
+    				  },
+    				  error: function(request, status, error){
+    						alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
+    				  }
+    			  });
+    		  }// end of  function goGySearch(){}-----------------
+   	  	  
+    		  
+    		  
 //////////## 등록하기 ##//////////
 
   function func_StudentRegister() {
@@ -428,7 +548,7 @@
     	   
    } //end of function func_StudentRegister()
          	
-   
+ 
   </script>
 
 
@@ -469,7 +589,7 @@
 			       <tr>
 			         <td style="width: 20%; font-weight: bold;">주민등록번호</td>
 			         <td style="width: 80%; text-align: left;">
-			             <input type="text" id="stdjumin" name="stdjumin" class="requiredInfo" size="25" maxlength="14" placeholder=" '-'를 포함하여  기입하시오."/>
+			             <input type="text" id="stdjumin" name="stdjumin" class="requiredInfo" size="25" maxlength="13" placeholder=" '-'을 제외하고 기입하시오."/>
 			             <span class="error">주민등록번호 형식이 아닙니다.</span>
 			         </td>
 			      </tr>
@@ -489,25 +609,106 @@
 			      </tr>
 			    <tr>
 			         <td style="width: 20%; font-weight: bold;">연락처</td>
-			         <td style="width: 80%; text-align: left;"><input type="text" name="stdmobile" id="stdmobile" class="requiredInfo" placeholder="예)010-1111-1111" /> 
+			         <td style="width: 80%; text-align: left;"><input type="text" name="stdmobile" id="stdmobile" class="requiredInfo" maxlength="11" placeholder="예)01012345678" /> 
 			             <span class="error"><br>연락처 형식에 맞지 않습니다.</span>
-			            
 			         </td>
 			      </tr>
-			      <tr>
-			         <td style="width: 20%; font-weight: bold;">학과코드</td>
-			         <td style="width: 80%; text-align: left;">
-			             <input type="text" name="stdmajorid" id="stdmajorid" class="requiredInfo" /> 
-			             <select id="selectStdmajorid">
-			              <option value="" disabled selected>학과명 선택</option>
-			              <option value=11 id=11>컴퓨터공학과</option>
-			              <option value=12 id=12>정보보안학과</option>
-			              <option value=13 id=13>정보통신공학과</option>
-        			    </select>
-			             <span class="error"><br>학과명은 필수입력 사항입니다.</span>
-			         </td>
-			      </tr>
-			   
+
+				<tr>
+				<th style="width: 20%; font-weight: bold;">학과코드</th> 
+				<td> 
+		            <input type="text" id="stdmajorid" name="stdmajorid" size="20" placeholder="학과코드" class="requiredInfo" value=""/>
+		            <button type="button" id="deptSearch" class="btn btn-secondary btn-sm mr-3" data-toggle="modal" data-target="#deptSearch" style="background-color: #00001a; color: white;">
+			                  학과찾기
+			        </button>
+		          
+		            
+	            </td>
+	            
+	            <!-- *** 학과,학과코드 찾기 Modal ***** -->
+					<div class="modal fade" id="deptSearch" data-backdrop="static">
+				  	 <div class="modal-dialog">
+	                  <div class="modal-content">
+				      
+				      <!-- Modal header -->
+				     <div class="modal-header">
+	                  <h4 class="modal-title">학과 찾기</h4>
+	                  <button type="button" class="close myclose" data-dismiss="modal">&times;</button>
+	                 </div>
+				     
+			
+				      <!-- Modal body -->
+				      <div class="modal-body">
+				        <div id="deptnameSearch">
+				          <form name="searchFrm" style="margin-top: 20px;">
+					      <select name="searchType" id="searchType" style="height: 26px;">
+					         <option value="majorid">학과코드</option>
+					         <option value="deptname">학과명</option>
+					      </select>
+					      <input type="text" name="searchWord" id="searchWord" size="35" autocomplete="off" /> 
+					      <input type="text" style="border: none; display: none;"/> 
+					      <button type="button" class="btn btn-secondary btn-sm"  style="background-color: #00001a; color: white;" onclick="goDpSearch()">조회</button>
+					    </form>   
+					   </div>
+					
+					   	<div class="my-3" id="div_searchResult"></div> 
+					
+					
+				      <!-- Modal footer -->
+				      <div class="modal-footer">
+				        <button type="button" class="btn btn-danger myclose" data-dismiss="modal">Close</button>
+				      </div>
+				     </div>
+				    </div>
+				  </div>
+				</div>
+			</tr>
+
+            <tr>
+			<th style="width: 20%; font-weight: bold;">교원번호</th> 
+			<td> 
+	            <input type="text" id="gyowonid" name="gyowonid" size="20" placeholder="교원번호" class="requiredInfo" value=""/>
+	            <button type="button" id="gyowonSearch" class="btn btn-secondary btn-sm mr-3" data-toggle="modal" data-target="#gyowonSearch" style="background-color: #00001a; color: white;">
+		                 교원찾기
+		        </button>
+            </td>
+            <!-- *** 학과,학과코드 찾기 Modal ***** -->
+				<div class="modal fade" id="gyowonSearch">
+			  	 <div class="modal-dialog ">
+                  <div class="modal-content">
+			      
+			      <!-- Modal header -->
+			     <div class="modal-header">
+                  <h4 class="modal-title">교원 찾기</h4>
+                  <button type="button" class="close myclose" data-dismiss="modal">&times;</button>
+                 </div>
+			     
+		
+			      <!-- Modal body -->
+			      <div class="modal-body">
+			        <div id="gyowonidSearch">
+				      <select name="searchType_1" id="searchType_1" style="height: 26px;">
+				         <option value="gyowonid">교원번호</option>
+				         <option value="majorid">학과코드</option>
+				         <option value="deptname">학과명</option>
+				      </select>
+				      <input type="text" name="searchWord_1" id="searchWord_1" size="35" autocomplete="off" /> 
+				      <input type="text" style="display: none;"/> 
+				      <button type="button" class="btn btn-secondary btn-sm"  style="background-color: #00001a; color: white;" onclick="goGySearch()">조회</button>
+				   </div>
+				
+				   	<div class="my-3" id="div_GySearchResult"></div> 
+					
+			      <!-- Modal footer -->
+			      <div class="modal-footer">
+			        <button type="button" class="btn btn-danger myclose" data-dismiss="modal">Close</button>
+			      </div>
+			     </div>
+			    </div>
+			  </div>
+			</div>
+		</tr>
+
 			       <tr>
 			         <td style="width: 20%; font-weight: bold;">입학전형</td>
 			         <td style="width: 80%; text-align: left;">

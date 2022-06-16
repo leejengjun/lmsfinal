@@ -9,6 +9,9 @@ import com.spring.lmsfinal.yejinsim.model.MylectureVO;
 
 public interface InterGyowonService {
 
+//학과 찾기 	
+    List<GyowonVO> gyoDeptlistSearch(Map<String, String> paraMap);
+	
 //교원회원 등록
 	int gyowonRegisterEnd(Map<String, String> paraMap);
 	
@@ -20,7 +23,7 @@ public interface InterGyowonService {
 	int gyoemailDuplicateCheck(String gyoemail);
 	
 //교수리스트 보기
-	  int getGTotalPage(Map<String, String> paraMap);
+	int getGTotalPage(Map<String, String> paraMap);
 	
 //교수리스트 보기
 	List<GyowonVO> selectPagingGyowon(Map<String, String> paraMap);
@@ -40,6 +43,9 @@ public interface InterGyowonService {
 
 //교수강의 개설 승인(페이징처리함)
 	List<MylectureVO> selectPagingGyowonOpen(Map<String, String> paraMap);
+
+
+	
 
 	
 

@@ -1,98 +1,54 @@
+  
+
 show user;
 --USER이(가) "FINALORAUSER3"입니다.
 select *
 from spring_test;
 
 
-------------------------------------
---휴학 복학 학생 테이블 조인--
-------------------------------------
-
-
--- 복학
-CREATE TABLE tbl_return_school (
-	returnseq      NUMBER        NOT NULL, -- 복학번호
-	stdid          NUMBER        NULL,     -- 학번
-	returnsemester VARCHAR2(100) NULL,     -- 복학학기
-	returntype     VARCHAR2(100) NULL,     -- 복학종류
-	regdate        DATE          NULL,     -- 신청일자
-	approvedate    DATE          NULL,     -- 승인일자
-	approve        VARCHAR2(100) NULL,     -- 승인여부
-	filename       VARCHAR2(255) NULL,     -- 파일이름
-	orgfilename    VARCHAR2(255) NULL,     -- 진짜파일이름
-	filesize       NUMBER        NULL      -- 파일크기
+-- 학적상태
+CREATE TABLE tbl_stdstate (
+	stdstateid NUMBER        NOT NULL, -- 학적상태코드
+	statename  VARCHAR2(100) NULL      -- 상태명
 );
 
-returnseq,stdid,returnsemester,returntype,regdate,approvedate
-,approve,filename,orgfilename,filesize 
+insert into tbl_stdstate(stdstateid, statename) values(6 ,'휴학신청');
+insert into tbl_stdstate(stdstateid, statename) values(7 ,'복학신청');
+insert into tbl_stdstate(stdstateid, statename) values(8 ,'신청반려');
+commit;
 
---휴학
-CREATE TABLE tbl_leave_school (
-	leaveno        NUMBER        NOT NULL, -- 휴학번호
-	stdid          NUMBER        NULL,     -- 학번
-	startsemester  VARCHAR2(100) NULL,     -- 시작학기
-	endsemester    VARCHAR2(100) NULL,     -- 종료학기
-	filename       VARCHAR2(255) NULL,     -- 파일이름
-	orgfilename    VARCHAR2(255) NULL,     -- 진짜파일이름
-	filesize       NUMBER        NULL,     -- 파일크기
-	regdate        DATE          DEFAULT sysdate, -- 신청일자
-	approve        VARCHAR2(100) NULL,     -- 신청결과
-	noreason       VARCHAR2(300) NULL,     -- 반려이유
-	returnsemester VARCHAR2(100) NULL,     -- 복학예정학기
-	leavetype      VARCHAR2(100) NULL,     -- 휴학종류
-	leavereason    VARCHAR2(300) NULL,     -- 휴학사유
-	returnschool   NUMBER(1)     NULL,     -- 복학여부
-	armytype       VARCHAR2(100) NULL,     -- 병종
-	armystartdate  VARCHAR2(100)          NULL,     -- 군시작일자
-	armyenddate    VARCHAR2(100)        NULL      -- 군종료일자
-);
 
-leaveno, stdid,startsemester,endsemester,filename,orgfilename,filesize,regdate,approve,noreason,returnsemester
- ,leavetype,leavereason,returnschool,armytype,armystartdate,armyenddate 
- 
- 
--- 학생
-CREATE TABLE tbl_student (
-	stdid       NUMBER        NOT NULL, -- 학번
-	stdmajorid  NUMBER        NULL,     -- 학과코드
-	dmajorid    NUMBER        NULL,     -- 복수전공코드
-	minorid     NUMBER        NULL,     -- 부전공코드
-	stdstateid  NUMBER        NULL,     -- 학적상태코드  (1: 제학중)
-	scholarcode NUMBER        NULL,     -- 장학코드
-	gyowonid    NUMBER        NULL,     -- 교원번호
-	stdpwd      VARCHAR2(100) NOT NULL, -- 비밀번호
-	stdname     VARCHAR2(100) NOT NULL, -- 이름(한글)
-	stdemail    VARCHAR2(100) NOT NULL, -- 이메일
-	status      NUMBER(1)     DEFAULT 1, -- 계정상태
-	stdnameeng  VARCHAR2(100) NULL,     -- 학생이름(영문)
-	stdnation   VARCHAR2(100) NULL,     -- 국적
-	stdbirthday DATE          NULL,     -- 생년월일
-	entday      DATE          NULL,     -- 입학일자
-	entstate    VARCHAR2(100) NULL,     -- 입학구분
-	stdjumin    VARCHAR2(100) NULL,     -- 주민등록번호
-	enttype     VARCHAR2(100) NULL,     -- 입학전형
-	examnum     VARCHAR2(100) NULL,     -- 수험번호
-	stdpostcode VARCHAR2(100) NULL,     -- 우편번호
-	stdaddress  VARCHAR2(100) NULL,     -- 주소
-	stdmobile   VARCHAR2(100) NULL,     -- 연락처
-	schoolfrom1 VARCHAR2(100) NULL,     -- 출신학교1
-	graddate1   DATE          NULL,     -- 출신학교졸업년도1
-	schoolfrom2 VARCHAR2(100) NULL,     -- 출신학교2
-	graddate2   DATE          NULL      -- 출신학교졸업년도2
+
+---------------------------------------------------------------------------------------------------------------
+--1. 관리자 테이블
+
+drop table tbl_admin purge;
+
+
+create table tbl_admin
+(userid             varchar2(50)   not null  -- 관리자 아이디
+,pwd                varchar2(200)  not null  -- 비밀번호 (SHA-256 암호화 대상)
+,constraint PK_tbl_admin_userid primary key(userid)
 );
-stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-            gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-            ,entstate,stdjumin,enttype,examnum,stdpostcode
-            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2  AS Student 
-            
-       
- -----강의 조회 3개 테이블 조인--
+---Table TBL_ADMIN이(가) 생성되었습니다.
+
+commit;
+--커밋 완료.
+
+insert into tbl_admin(userid, pwd) values('admin','qwer1234$');
+
+select *
+from tbl_admin;
+
+
+
+ -----강의 조회 3개 테이블 조인 휴학--
 select S.stdname, S.stdid, S.stdmajorid, S.stdstateid, L.approve, R.approve
 from tbl_student  S 
 JOIN tbl_leave_school  L 
 ON S.stdid = L.stdid
 JOIN tbl_return_school R
-ON S.stdid = R.stdid
+ON S.stdid = R.stdid;
 
 
 select *
@@ -101,28 +57,7 @@ from tbl_leave_school
 select *
 from tbl_student
 
-  -----강의 조회 3개 테이블 조인--
-select S.stdid, L.approve, R.approve
-from tbl_student  S 
-JOIN tbl_leave_school  L 
-ON S.stdid = L.stdid
-JOIN tbl_return_school R
-ON S.stdid = R.stdid   
-       
 
- update tbl_student set stdstateid = 2
- where stdid = 202211111
-     
- commit;
-     
-update tbl_leave_school set approve = '승인전'
-where stdid = 202211111  
-
-select *
-from tbl_student
-     
-update tbl_leave_school set approve = '승인완료'
-where stdid = 학번 and approve='승인전' 
 
 --휴학신청 2개 조인 결과        
 select S.stdname, S.stdid, S.stdmajorid, S.stdstateid, L.approve
@@ -137,20 +72,312 @@ select S.stdname, S.stdid, S.stdmajorid, S.stdstateid, R.approve
 from tbl_student  S 
 JOIN tbl_return_school R
 ON S.stdid = R.stdid
--------------------------------------------------------------------------------------------------------------------------------------
 
---------------------------------------------------------------------------------------------------------------------------------------
--- 학적상태
-CREATE TABLE tbl_stdstate (
-	stdstateid NUMBER        NOT NULL, -- 학적상태코드
-	statename  VARCHAR2(100) NULL      -- 상태명
-);
 
-insert into tbl_stdstate(stdstateid, statename) values(6 ,'휴학신청');
-insert into tbl_stdstate(stdstateid, statename) values(7 ,'복학신청');
-insert into tbl_stdstate(stdstateid, statename) values(8 ,'신청반려');
-commit;
+select majorid, deptname 
+		from tbl_department
+		--<if test='searchType == "" or searchWord == ""'>
+		where majorid > 0
+		--</if>
+		--<if test='searchType != "" and searchWord != ""'>
+		--where lower(${searchType}) like '%'||lower(#{searchWord})||'%'
+		--</if>
+		order by majorid asc
+        
+        
 
+--학과코드랑 학과이름 같이 보이게 조인한것        
+select S.stdname, S.stdid, S.stdmajorid, D.majorid, D.deptname, S.stdstateid 
+        from tbl_student  S 
+        JOIN tbl_department D 
+        ON S.stdmajorid = D.majorid      
+where status = 2        
+
+           
+       select  stdname, stdid, stdmajorid, stdstateid
+			from
+			(select rownum AS rno, 
+	          stdname, stdid, stdmajorid, stdstateid
+	   from tbl_student
+	   where status = 2  
+		) V
+        where rno between '1'  and '5';
+
+
+ -- 학생회원전체조회 총게시물 건수(totalCount)--
+   
+       select count(*)
+        from
+        ( select stdname, stdid, stdmajorid, stdstateid, deptname
+       from (
+       select A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
+       from
+       ( select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+               gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+               ,entstate,stdjumin,enttype,examnum,stdpostcode
+               ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+         from tbl_student) A
+      JOIN 
+      (select majorid, deptname
+      from tbl_department) B
+      ON A.stdmajorid = B.majorid 
+      --  <if test='searchType_1 != ""'>
+       --and lower(deptname) like '%'||lower('정보보안학과')||'%'
+       and lower(deptname) like '%' || lower('정보보안학과') || '%' and lower(stdstateid) like '%'||lower(1)||'%'  
+           -- </if>  
+           -- <if test='stdstateid != null'>
+       and lower(stdstateid) like '%'||lower(1)||'%'  
+        
+        
+      --</if>
+        ) V
+    )
+    
+    
+    
+  -- 학생회원전체조회 --
+
+      select rno, stdname, stdid, stdmajorid, stdstateid, deptname
+      from 
+      (
+       select rownum AS rno, A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
+       from
+      ( 
+      select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+             gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+            ,entstate,stdjumin,enttype,examnum,stdpostcode
+            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+      from tbl_student) A
+      JOIN 
+      (select majorid, deptname
+      from tbl_department) B
+      ON A.stdmajorid = B.majorid
+        --  <if test='searchType_1 != "" and searchWord_1 != ""'>
+      where lower(deptname) like '%'||lower('컴퓨터공학과')||'%' and lower(stdstateid) like '%'||lower(1)||'%'  
+       --</if>
+      -- <if test='stdstateid != null'>
+         and lower(stdstateid) like '%'||lower(1)||'%'  
+      -- </if>
+        )Z
+        where rno between 1 and 5      
+        
+        
+
+  --학생 1명조회 --
+   select A.stdid, A.stdpwd, A.stdname, A.stdemail, A.stdmajorid, A.stdstateid, B.deptname, B.majorid, scholarcode,
+	             gyowonid,status,stdnameeng,stdnation,stdbirthday,entday
+	            ,entstate,stdjumin,enttype,examnum,stdpostcode
+	            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+          from
+           ( select  stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
+             gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
+            ,entstate,stdjumin,enttype,examnum,stdpostcode
+            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
+		  from tbl_student) A
+		  JOIN 
+		  (select majorid, deptname
+		  from tbl_department) B
+		  ON A.stdmajorid = B.majorid 
+          where stdname = '김쌍용';
+   
+  
+  --교원 카운트
+   
+   select count(*)
+		from (   
+        select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
+        from
+        ( select gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+                 gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+                ,career2, careerTime2, status
+         from tbl_gyowon) A
+         JOIN 
+         (select majorid, deptname
+         from tbl_department) B
+         ON A.gyomajorid = B.majorid    
+            and lower(deptname) like '%'|| lower('컴퓨터공학과')||'%' 
+          )
+        
+  
+  
+--교원 전체조회 --
+     
+   select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
+        from
+        ( select rownum AS rno, gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+                 gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+                ,career2, careerTime2, status
+		from tbl_gyowon) A
+		JOIN 
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.gyomajorid = B.majorid 
+        and lower(deptname) like '%'|| lower('컴퓨터공학과')||'%'
+        where rno between 1 and 3;
+        
+        
+
+        
+     --교원 1명조회 --
+     
+    select A.gyowonid, A.gyopwd, A.gyoname, A.gyoemail, A.gyomajorid, A.workstatus, B.deptname, B.majorid,
+            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+            ,career2, careerTime2, status
+    from
+    (select gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
+            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
+           ,career2, careerTime2, status
+		   from tbl_gyowon) A
+	JOIN 
+		(select majorid, deptname
+		from tbl_department) B
+		ON A.gyomajorid = B.majorid 
+        where gyoname = '김영희';
+     
+     
+ --교수강의 신청 카운트--    
+  select count(*)
+	      from
+	       (
+	       select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
+	     , opensemester, applystate, applydate, totalperson
+	     , dayid, lctrid, seq_lectureplan
+	      from
+	      (
+	      select distinct A.deptname, B.subjectid, B.classname, B.credit
+	     , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+	     , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+	     , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+	                 , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+	     from
+	     (select majorid, deptname
+	     from tbl_department) A
+	     JOIN 
+	     (select majorid, subjectid, gyowonid, classname, credit, 
+	             opensemester, applyperson, totalperson,
+	             applystate, applydate
+	     from tbl_subject
+	     ) B
+	     ON A.majorid = B.majorid
+	     lEFT JOIN 
+	     (select subjectid, periodid, dayid, seq_lctrid
+	     from tbl_lectureroom_assign
+	     ) C
+	     ON B.subjectid = C.subjectid
+	     lEFT JOIN 
+	     (
+	     select buildno, lctrid, seq_lctrid
+	     from tbl_lectureroom
+	     )D
+	     ON C.seq_lctrid = D.seq_lctrid
+	     lEFT JOIN 
+	     (select buildno, buildname
+	     from tbl_building
+	     )E
+	     on D.buildno = E.buildno
+	     lEFT JOIN 
+	     (select dayid, abvat
+	     from tbl_dayofweek
+	     )F
+	     on C.dayid = F.dayid
+	     lEFT JOIN 
+	     (select seq_lectureplan, subjectid
+	     from tbl_lectureplan) G
+	     on B.subjectid = G.subjectid
+	     lEFT JOIN 
+	     (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+	     from (select subjectid, dayid, periodid, seq_lctrid
+	     from tbl_lectureroom_assign)
+	     group by subjectid
+	     order by subjectid) H
+	     on B.subjectid = H.subjectid
+	     lEFT JOIN 
+	     (select seq_lectureplan, subjectid
+	     from tbl_lectureplan) I
+	     on B.subjectid = I.subjectid 
+      --  <if test='searchType_1 != "" and searchWord_1 != ""'>
+where lower(deptname) like '%' || lower('컴퓨터공학과') || '%'  and  lower(applystate) like '%'|| lower('등록완료')||'%' 
+       -- </if>
+)         -- <if test="applystate != ''">
+where lower(applystate) like '%'||lower('등록완료')||'%'  
+      --</if>
+
+)       
+ 
+ --교원 수강신청 목록 보기      
+  select rno, deptname, subjectid, classname, credit
+      , opensemester, applystate, applydate, totalperson
+      , dayid, lctrid, seq_lectureplan
+        from
+        (
+        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
+      , opensemester, applystate, applydate, totalperson
+      , dayid, lctrid, seq_lectureplan
+       from
+       (
+       select distinct A.deptname, B.subjectid, B.classname, B.credit
+      , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
+      , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
+      , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
+                  , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
+      from
+      (select majorid, deptname
+      from tbl_department) A
+      JOIN 
+      (select majorid, subjectid, gyowonid, classname, credit, 
+              opensemester, applyperson, totalperson,
+              applystate, applydate
+      from tbl_subject
+      ) B
+      ON A.majorid = B.majorid
+      lEFT JOIN 
+      (select subjectid, periodid, dayid, seq_lctrid
+      from tbl_lectureroom_assign
+      ) C
+      ON B.subjectid = C.subjectid
+      lEFT JOIN 
+      (
+      select buildno, lctrid, seq_lctrid
+      from tbl_lectureroom
+      )D
+      ON C.seq_lctrid = D.seq_lctrid
+      lEFT JOIN 
+      (select buildno, buildname
+      from tbl_building
+      )E
+      on D.buildno = E.buildno
+      lEFT JOIN 
+      (select dayid, abvat
+      from tbl_dayofweek
+      )F
+      on C.dayid = F.dayid
+      lEFT JOIN 
+      (select seq_lectureplan, subjectid
+      from tbl_lectureplan) G
+      on B.subjectid = G.subjectid
+      lEFT JOIN 
+      (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
+      from (select subjectid, dayid, periodid, seq_lctrid
+      from tbl_lectureroom_assign)
+      group by subjectid
+      order by subjectid) H
+      on B.subjectid = H.subjectid
+        lEFT JOIN 
+        (select seq_lectureplan, subjectid
+        from tbl_lectureplan) I
+        on B.subjectid = I.subjectid
+         --   <if test='searchType_1 != "" and searchWord_1 != ""'>
+    where lower(deptname) like '%' || lower('컴퓨터공학과') || '%'  and  lower(applystate) like '%'|| lower('등록완료')||'%'  
+    ) 
+       --  </if>
+       --<if test="applystate != ''">
+   where lower(applystate) like '%'|| lower('등록완료')||'%'  
+ --</if>
+   )
+    where rno between 1 and 5      
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -- 학적상태 기본키
 CREATE UNIQUE INDEX PK_tbl_stdstate
 	ON tbl_stdstate ( -- 학적상태
@@ -164,11 +391,6 @@ ALTER TABLE tbl_stdstate
 		PRIMARY KEY (
 			stdstateid -- 학적상태코드
 		);
-        
- select *
-from tbl_stdstate;
- 
- 
 
         
  -- 관리자
@@ -177,11 +399,7 @@ CREATE TABLE tbl_admin (
 	pwd    VARCHAR2(100) NULL,     -- 비밀번호
 	status NUMBER(1)     NULL      -- 계정상태
 );
-insert into tbl_admin(userid, pwd, status) values('admin','qwer1234$','1');
-commit;
 
-select *
-from tbl_admin;
 
 -- 관리자 기본키
 CREATE UNIQUE INDEX PK_tbl_admin
@@ -196,10 +414,7 @@ ALTER TABLE tbl_admin
 		PRIMARY KEY (
 			userid -- 아이디
 		);
-        
-            
- select *
-from tbl_return_school;   
+ 
 -- 복학
 CREATE TABLE tbl_return_school (
 	returnseq      NUMBER        NOT NULL, -- 복학번호
@@ -248,8 +463,6 @@ CREATE TABLE tbl_leave_school (
 	armystartdate  DATE          NULL,     -- 군시작일자
 	armyenddate    DATE          NULL      -- 군종료일자
 );
-select *
-from tbl_leave_school;
 
 
 -- 휴학 기본키
@@ -329,53 +542,7 @@ CREATE TABLE tbl_subject (
 	dayid        NUMBER        NULL      -- 요일코드
 );
 
-select *
-from tbl_department
 
-
-select majorid, deptname 
-		from tbl_department
-		--<if test='searchType == "" or searchWord == ""'>
-		where majorid > 0
-		--</if>
-		--<if test='searchType != "" and searchWord != ""'>
-		--where lower(${searchType}) like '%'||lower(#{searchWord})||'%'
-		--</if>
-		order by majorid asc
-        
-        
-        
---학과코드랑 학과이름 같이 보이게 조인한것        
-select S.stdname, S.stdid, S.stdmajorid, D.majorid, D.deptname, S.stdstateid 
-        from tbl_student  S 
-        JOIN tbl_department D 
-        ON S.stdmajorid = D.majorid      
-where status = 2        
-
---  
-
-    select S.stdname, S.stdid, S.stdmajorid, D.majorid, D.deptname, S.stdstateid 
-			from
-			(select rownum AS rno
-	         ,S.stdname, S.stdid, S.stdmajorid, D.majorid, D.deptname, S.stdstateid 
-             from tbl_student  S 
-             JOIN tbl_department D 
-             ON S.stdmajorid = D.majorid      
-		) V
-        where rno between '1'  and '5';
-   
-----            
-       select  stdname, stdid, stdmajorid, stdstateid
-			from
-			(select rownum AS rno, 
-	          stdname, stdid, stdmajorid, stdstateid
-	   from tbl_student
-	   where status = 2  
-		) V
-        where rno between '1'  and '5';
-             
-     
-     
         
 -- 강의 기본키
 CREATE UNIQUE INDEX PK_tbl_subject
@@ -444,17 +611,7 @@ CREATE TABLE tbl_gyowon (
 	careerTime2   VARCHAR2(100) NULL,     -- 경력기간2
 	status        NUMBER(1)     DEFAULT 1 -- 계정상태
 );
-insert into tbl_gyowon(gyowonid, gyopwd, gyoname, gyoemail, position, gyomajorid) values('999901001','19680123', '김교수', 'kgs@abc.efg','학과장','01');                          ----------------------
-commit;
-delete from tbl_gyowon where gyowonid = '999901001';
-
-select *
-from tbl_gyowon ;
-
-
- select count(*)
-			 from tbl_gyowon
-			 where status = 3    
+ 
              
 
 -- FACULTY_PK
@@ -497,12 +654,6 @@ CREATE TABLE tbl_department (
 	deptname VARCHAR2(100) NULL      -- 학과이름
 );
 
-insert into tbl_student(stdid, stdpwd, stdname, stdemail, stdmajorid, stdstateid)
-select deptname
-from tbl_department;
-
-select *
-from tbl_department;
 
 
 -- DEPARTMENT_PK
@@ -510,13 +661,7 @@ CREATE UNIQUE INDEX DEPARTMENT_PK
 	ON tbl_department ( -- 학과
 		majorid ASC -- 학과코드
 	);
-insert into tbl_department(majorid , deptname) values('01','컴퓨터공학과');                                                               ----------------------------------------------------
-commit;
-delete from tbl_department where majorid = '01';
 
-
-select *
-from tbl_department;
 
 -- 학과
 ALTER TABLE tbl_department
@@ -603,61 +748,7 @@ CREATE TABLE tbl_student (
 	graddate2   DATE          NULL      -- 출신학교졸업년도2
 );
 
-select *
-from tbl_student;
-insert into tbl_student(stdid, stdpwd, stdname, stdemail, stdmajorid, stdstateid) values('202211118','19930104','테스트2','test2@abc.efg', '11','2' );
-commit;
-
-update tbl_student set stdstateid = (select stdstateid from tbl_student where stdstateid = 2)
-where stdid = '202200001';
-
-update tbl_student set stdstateid = 1 where(stdstateid is null);
-
-commit;
-
-rollback;
-
- update tbl_student set stdstateid = 6
-		where stdid = 202211111;
-        
-        
-        
-
--- 학생 1명
-  select  stdid, stdmajorid, dmajorid, stdstateid, gyowonid, stdpwd, stdname, stdemail, status, stdnameeng, stdnation
-		       , stdbirthday , entday, entstate ,stdjumin, enttype, examnum, stdpostcode, stdaddress, stdmobile
-		       , schoolfrom1, graddate1 , schoolfrom2, graddate2
-		    from tbl_student
-		    where stdname = '나쌍용'
-		    <if test='searchType_1 != "" and searchWord_1 != "" '>
-		    and lower(${searchType_1}) like '%' || lower(#{searchWord_1}) || '%'
-		    </if>
-
-
---- 학생회원조회 시작 
- select  stdname, stdid, stdmajorid, stdstateid
-	   from
-  	   (
-	   select
-	          stdname, stdid, stdmajorid, stdstateid
-	   from tbl_student
-	   where status = 2  
-	   <if test='searchType_1 != "" and searchWord_1 != ""'>
-	   and lower(${searchType_1}) like '%' || lower(#{searchWord_1}) || '%'  
-	   </if>
-	   ) V
-       
---- 학생회원조회 끝      
-       
-       
-select count(*) from tbl_student
-where stdid = 202200002;
-
-select *
-from tbl_student
-where stdid = 202200002;
-
-  select * from tbl_student full outer join Btable on Atable.aidx = Btable.bidx;                        
+                 
                           
 -- STD_PK
 CREATE UNIQUE INDEX STD_PK
@@ -679,16 +770,7 @@ ALTER TABLE tbl_student
 			stdid -- 학번
 		);
         
-        
-  -- 학생회원전체조회 --     
-  select  stdname, stdid, stdmajorid, stdstateid
-			from
-			(select rownum AS rno, 
-	          stdname, stdid, stdmajorid, stdstateid
-	   from tbl_student
-	   where status = 2  
-		) V
-        where rno between '1'  and '10';
+
         
         
         
@@ -1040,360 +1122,3 @@ nocache;
 
 
 
----------------------------------------------------------------------------------------------------------------
---1. 관리자 테이블
-
-drop table tbl_admin purge;
-
-
-create table tbl_admin
-(userid             varchar2(50)   not null  -- 관리자 아이디
-,pwd                varchar2(200)  not null  -- 비밀번호 (SHA-256 암호화 대상)
-,constraint PK_tbl_admin_userid primary key(userid)
-);
----Table TBL_ADMIN이(가) 생성되었습니다.
-
-commit;
---커밋 완료.
-
-insert into tbl_admin(userid, pwd) values('admin','qwer1234$');
-
-select *
-from tbl_admin;
-
-
-
-
-
-select *
-from tab;
-
-
-  --학생 1명조회 --
-   select A.stdid, A.stdpwd, A.stdname, A.stdemail, A.stdmajorid, A.stdstateid, B.deptname, B.majorid, scholarcode,
-            gyowonid,status,stdnameeng,stdnation,stdbirthday,entday
-            ,entstate,stdjumin,enttype,examnum,stdpostcode
-            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-    from
-    ( select  stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-            gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-            ,entstate,stdjumin,enttype,examnum,stdpostcode
-            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-		from tbl_student) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.stdmajorid = B.majorid 
-          where stdname = '김쌍용';
-   
-   
-   --학생전체조회
-    select count(*)
-    from (
-    select A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
-    from
-    ( select   stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-            gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-            ,entstate,stdjumin,enttype,examnum,stdpostcode
-            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-		from tbl_student) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.stdmajorid = B.majorid 
-       and lower(deptname) like '%'|| lower('컴퓨터공학과')||'%' 
-       ) V
-  -------------------------------------------
-  
-      select A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
-        from
-          ( select rownum AS rno, stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-                   gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-                  ,entstate,stdjumin,enttype,examnum,stdpostcode
-                  ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-		from tbl_student) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.stdmajorid = B.majorid
-	   	<if test='searchType_1 != "" and searchWord_1 != ""'>
-		and lower(${searchType_1}) like '%'||lower(#{searchWord_1})||'%'
-		</if>
-		where rno between #{startRno} and #{endRno}
-	   </select>   
----------------------------------------------------------------------------------------------전꺼---------------------       
-   
-       
-         --교원 전체조회 --
-     
-    select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
-    from
-    ( select  rownum AS rno, gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
-            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
-            ,career2, careerTime2, status
-		from tbl_gyowon) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.gyomajorid = B.majorid 
-        and lower(deptname) like '%'|| lower('컴퓨터공학과')||'%'
-        where rno between 1 and 3;
-        
-        
-       --교원 카운트
-   
-     select count(*)
-	 from (   
-        select A.gyoname, A.gyowonid, A.gyomajorid, A.workstatus, B.deptname
-        from
-        ( select  gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
-                gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
-                ,career2, careerTime2, status
-            from tbl_gyowon) A
-            JOIN 
-            (select majorid, deptname
-            from tbl_department) B
-            ON A.gyomajorid = B.majorid 
-            and lower(deptname) like '%'|| lower('컴퓨터공학과')||'%' 
-          )
-        
-  
-        
-     --교원 1명조회 --
-     
-    select A.gyowonid, A.gyopwd, A.gyoname, A.gyoemail, A.gyomajorid, A.workstatus, B.deptname, B.majorid,
-            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
-            ,career2, careerTime2, status
-    from
-    ( select  gyowonid, gyopwd, gyoname, gyoemail, gyomajorid, workstatus, 
-            gyonameeng, gyobirthday,gyojumin,gyonation,gyoaddress, gyopostcode, gyomobile, position, appointmentdt, degree,career1,careerTime1
-            ,career2, careerTime2, status
-		from tbl_gyowon) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.gyomajorid = B.majorid 
-        where gyoname = '김영희';
-     
-     
-     
-     
-       
-       
-
---토탈페이지
-
- select count(*)
-      from (select majorid, deptname
-      from tbl_department) A
-      JOIN 
-      (select majorid, subjectid, gyowonid, classname, credit, 
-              opensemester, applyperson, totalperson,
-              applystate, applydate
-      from tbl_subject
-       where applystate='승인대기중' OR applystate= '등록완료' OR applystate= '신청반려'    
-      ) B
-      ON A.majorid = B.majorid
-      ORDER BY DECODE(applystate, '승인대기중', 1) ASC    
-      and lower(deptname) like '%'|| lower('정보보안학과') ||'%'
- 
- 
-
---전체 교수 강의  페이지(카운트)
- 
-      
-      -------------------
-   select count(*)
-        from
-        (
-        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
-      , opensemester, applystate, applydate, totalperson
-      , dayid, lctrid, seq_lectureplan
-       from
-       (
-       select distinct A.deptname, B.subjectid, B.classname, B.credit
-      , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
-      , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
-      , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
-                  , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
-      from
-      (select majorid, deptname
-      from tbl_department) A
-      JOIN 
-      (select majorid, subjectid, gyowonid, classname, credit, 
-              opensemester, applyperson, totalperson,
-              applystate, applydate
-      from tbl_subject
-      ) B
-      ON A.majorid = B.majorid
-      lEFT JOIN 
-      (select subjectid, periodid, dayid, seq_lctrid
-      from tbl_lectureroom_assign
-      ) C
-      ON B.subjectid = C.subjectid
-      lEFT JOIN 
-      (
-      select buildno, lctrid, seq_lctrid
-      from tbl_lectureroom
-      )D
-      ON C.seq_lctrid = D.seq_lctrid
-      lEFT JOIN 
-      (select buildno, buildname
-      from tbl_building
-      )E
-      on D.buildno = E.buildno
-      lEFT JOIN 
-      (select dayid, abvat
-      from tbl_dayofweek
-      )F
-      on C.dayid = F.dayid
-      lEFT JOIN 
-      (select seq_lectureplan, subjectid
-      from tbl_lectureplan) G
-      on B.subjectid = G.subjectid
-      lEFT JOIN 
-      (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
-      from (select subjectid, dayid, periodid, seq_lctrid
-      from tbl_lectureroom_assign)
-      group by subjectid
-      order by subjectid) H
-      on B.subjectid = H.subjectid
-        lEFT JOIN 
-        (select seq_lectureplan, subjectid
-        from tbl_lectureplan) I
-        on B.subjectid = I.subjectid
-        where applystate='승인대기중' OR applystate= '등록완료' OR applystate= '신청반려'     
-        ) V 
-        --<if test='searchType_1 != "" and searchWord_1 != ""'>
-         where lower(deptname) like '%'|| lower('컴퓨터공학과') ||'%' 
-       -- </if>
-       -- <if test="applystate != ''">
-		where lower(applystate) like '%'||lower('승인대기중')||'%'  
-		--</if>
-		)    
-        
- --교수강의 신청목록보기
-  select rno, deptname, subjectid, classname, credit
-      , opensemester, applystate, applydate, totalperson
-      , dayid, lctrid, seq_lectureplan
-        from
-        (
-        select row_number() over(order by applydate desc) AS rno, deptname, subjectid, classname, credit
-      , opensemester, applystate, applydate, totalperson
-      , dayid, lctrid, seq_lectureplan
-       from
-       (
-       select distinct A.deptname, B.subjectid, B.classname, B.credit
-      , B.opensemester, B.applystate, B.applydate, nvl(B.totalperson, NULL) as totalperson
-      , nvl(F.abvat, NULL) || ' ' || nvl(H.periodlist, NULL) AS dayid
-      , nvl(E.buildname,NULL) || ' ' ||  nvl(D.lctrid,NULL) AS lctrid
-                  , nvl(I.seq_lectureplan, NULL) AS seq_lectureplan
-      from
-      (select majorid, deptname
-      from tbl_department) A
-      JOIN 
-      (select majorid, subjectid, gyowonid, classname, credit, 
-              opensemester, applyperson, totalperson,
-              applystate, applydate
-      from tbl_subject
-      ) B
-      ON A.majorid = B.majorid
-      lEFT JOIN 
-      (select subjectid, periodid, dayid, seq_lctrid
-      from tbl_lectureroom_assign
-      ) C
-      ON B.subjectid = C.subjectid
-      lEFT JOIN 
-      (
-      select buildno, lctrid, seq_lctrid
-      from tbl_lectureroom
-      )D
-      ON C.seq_lctrid = D.seq_lctrid
-      lEFT JOIN 
-      (select buildno, buildname
-      from tbl_building
-      )E
-      on D.buildno = E.buildno
-      lEFT JOIN 
-      (select dayid, abvat
-      from tbl_dayofweek
-      )F
-      on C.dayid = F.dayid
-      lEFT JOIN 
-      (select seq_lectureplan, subjectid
-      from tbl_lectureplan) G
-      on B.subjectid = G.subjectid
-      lEFT JOIN 
-      (select subjectid, LISTAGG(periodid,',') WITHIN GROUP (ORDER BY periodid) AS periodlist
-      from (select subjectid, dayid, periodid, seq_lctrid
-      from tbl_lectureroom_assign)
-      group by subjectid
-      order by subjectid) H
-      on B.subjectid = H.subjectid
-        lEFT JOIN 
-        (select seq_lectureplan, subjectid
-        from tbl_lectureplan) I
-        on B.subjectid = I.subjectid
-        where applystate='승인대기중' OR applystate= '등록완료' OR applystate= '신청반려'     
-        ) V 
-        --<if test='searchType_1 != "" and searchWord_1 != ""'>
-        -- where  lower(deptname) like '%'|| lower('컴퓨터공학과') ||'%' 
-       -- </if>
-       -- <if test="applystate != ''">
-		where lower(applystate) like '%'||lower('승인대기중')||'%'  
-		--</if>
-		)
-      where rno between 1 and 7
-        
---학생 리스트 카운트
- select count(*)
-	    from (
-	    select A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
-	    from
-	    ( select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-	            gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-	            ,entstate,stdjumin,enttype,examnum,stdpostcode
-	            ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-			from tbl_student) A
-		JOIN 
-		(select majorid, deptname
-		from tbl_department) B
-		ON A.stdmajorid = B.majorid 
-		 -- <if test='searchType_1 != ""'>
-		 and lower(deptname) like '%'|| lower('컴퓨터공학과') ||'%' 
-         --   </if>  
-          --  <if test='stdstateid != null'>
-		and lower(stdstateid) like '%'||lower(1)||'%'  
-		--</if>
-        ) V
-        
---학생리스트 조회
-
-	     select rno, stdname, stdid, stdmajorid, stdstateid, deptname
-          from 
-          (
-          select rownum AS rno, A.stdname, A.stdid, A.stdmajorid, A.stdstateid, B.deptname
-          from
-          ( 
-          select stdid, stdmajorid, dmajorid,stdstateid ,scholarcode,
-                 gyowonid,stdpwd,stdname,stdemail,status,stdnameeng,stdnation,stdbirthday,entday
-                ,entstate,stdjumin,enttype,examnum,stdpostcode
-                ,stdaddress,stdmobile,schoolfrom1,graddate1,schoolfrom2, graddate2 
-	      from tbl_student) A
-	      JOIN 
-	      (select majorid, deptname
-	      from tbl_department) B
-	      ON A.stdmajorid = B.majorid
-	  -- 	 <if test='searchType_1 != "" and searchWord_1 != ""'>
-		 and lower(deptname) like '%'|| lower('컴퓨터공학과') ||'%' 
-		-- </if>
-		-- <if test='stdstateid != null'>
-		 and lower(stdstateid) like '%'||lower(1)||'%'  
-		 --</if>
-		  )Z
-		 where rno between 1 and 7
-	
-        
-        
-        
- 

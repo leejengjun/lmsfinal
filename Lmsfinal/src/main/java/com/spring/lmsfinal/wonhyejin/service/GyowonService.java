@@ -23,7 +23,16 @@ public class GyowonService implements InterGyowonService {
 
 	 @Autowired
 	  private AES256 aes;
+
+// 학과찾기
 	 
+	@Override
+	public List<GyowonVO> gyoDeptlistSearch(Map<String, String> paraMap) {
+		List<GyowonVO> gyoDeptlist = dao.gyoDeptlistSearch(paraMap);
+		return gyoDeptlist;
+	}
+
+		
 //교원회원 등록
 	@Override
 	public int gyowonRegisterEnd(Map<String, String> paraMap) {

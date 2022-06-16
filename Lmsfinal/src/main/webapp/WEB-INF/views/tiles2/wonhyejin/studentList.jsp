@@ -61,34 +61,34 @@ $(document).ready(function(){
 				   
 // 학적상태 변경_휴학신청 반려//				   
 	
-				$("input.btn_s_reject").click(function(){
-					 const idx = $("input.btn_s_reject").index($(this));
-					 //alert(idx);
-					 const stdid = $("td#stdid").eq(idx).text();
-					 //alert("확인용 stdid=>" + stdid);
-					 const stdstateid = $("p#stdstateid").eq(idx).text();
-					 //alert("확인용 stdstateid=>" + stdstateid);
-					 
-				       $.ajax({
-				    		url:"<%= ctxPath%>/stuLeaveDelete.lmsfinal",
-				    		data:{"stdid":stdid
-				    			  ,"stdstateid":$("select#stdstateid").val()},
-				    		type:"post",  
-				    		dataType:"JSON",
-				    	 	success:function(json){
-				    	 		if(json.n > 0) {
-				                  alert("휴학신청이 반려되었습니다");
-				                  location.href="javascript:history.go(0);"; // 페이지 새로고침
-				    	 	}
-							 
-					  	   }, 
-					  	   error:function(request, status, error){
-					  		   alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
-					  	   }
-					     }); 
-					     	
-					   });// end of $("input.btn_approve").click(function()-----------------------------------
-								   
+	$("input.btn_s_reject").click(function(){
+		 const idx = $("input.btn_s_reject").index($(this));
+		 //alert(idx);
+		 const stdid = $("td#stdid").eq(idx).text();
+		 //alert("확인용 stdid=>" + stdid);
+		 const stdstateid = $("p#stdstateid").eq(idx).text();
+		 //alert("확인용 stdstateid=>" + stdstateid);
+		 
+	       $.ajax({
+	    		url:"<%= ctxPath%>/stuLeaveDelete.lmsfinal",
+	    		data:{"stdid":stdid
+	    			  ,"stdstateid":$("select#stdstateid").val()},
+	    		type:"post",  
+	    		dataType:"JSON",
+	    	 	success:function(json){
+	    	 		if(json.n > 0) {
+	                  alert("휴학신청이 반려되었습니다");
+	                  location.href="javascript:history.go(0);"; // 페이지 새로고침
+	    	 	}
+				 
+		  	   }, 
+		  	   error:function(request, status, error){
+		  		   alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
+		  	   }
+		     }); 
+		     	
+		   });// end of $("input.btn_approve").click(function()-----------------------------------
+					   
 
 							   
 // 학적상태 변경_복학신청 승인//
@@ -123,34 +123,34 @@ $(document).ready(function(){
 				   
 // 학적상태 변경_복학신청 반려//				   
 	
-				$("input.btn_sR_reject").click(function(){
-					 const idx = $("input.btn_sR_reject").index($(this));
-					 //alert(idx);
-					 const stdid = $("td#stdid").eq(idx).text();
-					 //alert("확인용 stdid=>" + stdid);
-					 const stdstateid = $("p#stdstateid").eq(idx).text();
-					 //alert("확인용 stdstateid=>" + stdstateid);
+		$("input.btn_sR_reject").click(function(){
+			 const idx = $("input.btn_sR_reject").index($(this));
+			 //alert(idx);
+			 const stdid = $("td#stdid").eq(idx).text();
+			 //alert("확인용 stdid=>" + stdid);
+			 const stdstateid = $("p#stdstateid").eq(idx).text();
+			 //alert("확인용 stdstateid=>" + stdstateid);
+			 
+		       $.ajax({
+		    		url:"<%= ctxPath%>/stuReturnDelete.lmsfinal",
+		    		data:{"stdid":stdid
+		    			  ,"stdstateid":$("select#stdstateid").val()},
+		    		type:"post",  
+		    		dataType:"JSON",
+		    	 	success:function(json){
+		    	 		if(json.n > 0) {
+		                  alert("복학 신청이 반려되었습니다");
+		                  location.href="javascript:history.go(0);"; // 페이지 새로고침
+		    	 	}
 					 
-				       $.ajax({
-				    		url:"<%= ctxPath%>/stuReturnDelete.lmsfinal",
-				    		data:{"stdid":stdid
-				    			  ,"stdstateid":$("select#stdstateid").val()},
-				    		type:"post",  
-				    		dataType:"JSON",
-				    	 	success:function(json){
-				    	 		if(json.n > 0) {
-				                  alert("복학 신청이 반려되었습니다");
-				                  location.href="javascript:history.go(0);"; // 페이지 새로고침
-				    	 	}
-							 
-					  	   }, 
-					  	   error:function(request, status, error){
-					  		   alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
-					  	   }
-					     }); 
-					     	
-					   });// end of $("input.btn_approve").click(function()-----------------------------------
-								   
+			  	   }, 
+			  	   error:function(request, status, error){
+			  		   alert("code: "+request.status+"\n"+"message: "+request.responseText+"\n"+"error: "+error);
+			  	   }
+			     }); 
+			     	
+			   });// end of $("input.btn_approve").click(function()-----------------------------------
+						   
 
 				   
 				   

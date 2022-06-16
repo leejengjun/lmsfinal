@@ -26,6 +26,8 @@ public class GyowonVO {
 	
 	String deptname;
 	
+	private String majorid;
+	
 	public GyowonVO() {}
 	
 	public GyowonVO(String gyowonid, String gyopwd, String gyoemail, String gyomajorid, String gyoname,
@@ -231,7 +233,13 @@ public class GyowonVO {
 	public void setDeptname(String deptname) {
 		this.deptname = deptname;
 	}
+	public String getMajorid() {
+		return majorid;
+	}
 
+	public void setMajorid(String majorid) {
+		this.majorid = majorid;
+	}
 	
 }
 
